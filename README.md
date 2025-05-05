@@ -1,0 +1,1 @@
+# CowardCoin-4
