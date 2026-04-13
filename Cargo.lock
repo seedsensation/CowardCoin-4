@@ -185,6 +185,7 @@ name = "cowardcoin"
 version = "0.1.0"
 dependencies = [
  "poise",
+ "rand 0.8.5",
  "tokio",
 ]
 
