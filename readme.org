@@ -1,0 +1,12 @@
+#+title: COWARDCOIN v4
+
+* Introduction
+This is a re-implementation of CowardCoin, my Discord bot that rewards activity with coins, in Rust.
+
+* Structure
+There will be a thread, running constantly in the background, that manages the actual structure of the bot.
+It will listen on a channel, waiting for a message to be transmitted, carrying a =Request= object.
+Each =Request= object will hold a =Response= property, that is the channel to which the server will respond on, and the type of object that it should respond with.
+
+There will be a trait, =Sendable= (or something similar), that describes an object that can be sent in a =Response=.
+
