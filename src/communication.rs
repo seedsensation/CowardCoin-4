@@ -1,5 +1,6 @@
 use super::coin_server::Coin;
 use super::coin_server::Rarity;
+use super::coin_server::User;
 
 use std::fmt;
 use std::io;
@@ -26,22 +27,23 @@ impl fmt::Display for ResponseTypeError {
     }
 }
 
-/**
-An enum that can contain multiple different types, for handling responses.
+// COMPLETE THESE LATER - THIS IS A MENU
+pub enum GetType {}
 
-More ResponseTypes can be easily added.
-When you match ResponseType, make sure you add:
-```
-match v {
-    // ...
-    _ => Err(ResponseTypeError::UnhandledResponseType)
+pub enum SendType {
+    Coin(Coin),
+    String(String),
+    Rarity(Rarity),
 }
-```
-*/
-pub enum ResponseType {
-    MsgText(String),
-    MsgCoin(Coin),
-    MsgRarity(Rarity),
+
+pub enum EditType {
+    User(i32, User),
+}
+
+pub enum RequestType {
+    Get(GetType),
+    Send(SendType),
+    Edit(EditType),
 }
 
 /// A struct that holds a request, and a possible reply.
@@ -62,26 +64,4 @@ pub fn send_request(
         reply: tx,
     });
     Ok(rx)
-}
-
-impl From<String> for ResponseType {
-    fn from(value: String) -> Self {
-        ResponseType::MsgText(value)
-    }
-}
-
-impl fmt::Display for ResponseType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use ResponseType::*;
-        write!(
-            f,
-            "{}",
-            match self {
-                MsgText(s) => s.clone(),
-                MsgCoin(c) => c.rarity.name().to_string(),
-                MsgRarity(r) => r.name().to_string(),
-                _ => "Unknown Response Type".into(),
-            }
-        )
-    }
 }
