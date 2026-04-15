@@ -6,4 +6,4 @@ edition = "2024"
 [dependencies]
 poise = "0.6.1"
 rand = "0.8"
-tokio = { version = "1.12.2", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.12.2", features = ["macros", "rt-multi-thread", "time"] }

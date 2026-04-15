@@ -1,9 +1,8 @@
 use super::Coin;
 use super::Rarity;
 use std::fmt;
-use std::io::Error;
-use std::sync::mpsc::SendError;
-use std::sync::mpsc::{Receiver, Sender, channel};
+use std::io;
+use tokio::sync::mpsc::{Receiver, Sender, channel};
 
 /// Possible errors for the ResponseType enum
 #[derive(Debug, Clone)]
@@ -54,13 +53,13 @@ pub struct Request {
 pub fn send_request(
     message: ResponseType,
     to: Sender<Request>,
-) -> Result<Receiver<ResponseType>, SendError<Request>> {
+) -> io::Result<Receiver<ResponseType>> {
     let (tx, rx) = channel::<ResponseType>();
 
     to.send(Request {
         contents: message,
         reply: tx,
-    })?;
+    });
     Ok(rx)
 }
 
