@@ -2,6 +2,11 @@ use std::collections::HashMap;
 
 use coin_server::Coin;
 use coin_server::Rarity;
+use coin_server::Request;
+use coin_server::Server;
+use coin_server::User;
+
+use std::sync::mpsc::{channel, sync_channel};
 
 mod coin_server;
 mod helpers;
@@ -12,7 +17,7 @@ fn rarity_test() {
         let chosen = Coin::new();
         let value = values.get_mut(&chosen.rarity);
         if value.is_none() {
-            values.insert(chosen, 1);
+            values.insert(chosen.rarity, 1);
         } else {
             *value.unwrap() += 1;
         }
@@ -22,9 +27,7 @@ fn rarity_test() {
     }
 }
 
-fn main() {
-    rarity_test();
-
+fn generation_benchmark() {
     let start_free = std::time::Instant::now();
     for _ in 1..1000000 {
         Coin::new();
@@ -35,4 +38,18 @@ fn main() {
         Coin::new().arrival_message();
     }
     eprintln!("Time to run with output: {:?}", start_output.elapsed());
+}
+
+fn main() {
+    rarity_test();
+    // generation_benchmark()
+
+    let (tx, rx) = channel::<Request>();
+
+    let mut server = Server::load(rx);
+    server.users.push(User {
+        user_id: 0,
+        coin_count: 0,
+    });
+    server.save();
 }

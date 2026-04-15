@@ -1,8 +1,16 @@
 // add existing modules
-pub mod coin;
+mod coin;
 pub mod file_management;
-pub mod rarity;
-pub mod server;
-pub mod user;
+mod rarity;
+pub mod responses;
+mod server;
+mod user;
 
-pub use self::{coin::Coin, file_management::Serialisable, rarity::Rarity, user::User};
+pub use self::{
+    coin::Coin,
+    file_management::Serialisable,
+    rarity::Rarity,
+    responses::{Request, ResponseType},
+    server::Server,
+    user::User,
+};

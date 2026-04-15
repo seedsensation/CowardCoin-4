@@ -1,0 +1,9 @@
+#+title: CowardCoin v4
+
+* About the Project
+This is the 4th edition of CowardCoin, my Discord bot that creates coins at random intervals.
+
+* Project Structure
+The project will be split into two halves - the Discord bot, and the Coin backend.
+
+The backend will run on a separate thread, and will receive and respond to messages.
