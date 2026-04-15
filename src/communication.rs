@@ -1,5 +1,6 @@
-use super::Coin;
-use super::Rarity;
+use super::coin_server::Coin;
+use super::coin_server::Rarity;
+
 use std::fmt;
 use std::io;
 use tokio::sync::mpsc::{Receiver, Sender, channel};
@@ -54,7 +55,7 @@ pub fn send_request(
     message: ResponseType,
     to: Sender<Request>,
 ) -> io::Result<Receiver<ResponseType>> {
-    let (tx, rx) = channel::<ResponseType>();
+    let (tx, rx) = channel::<ResponseType>(100);
 
     to.send(Request {
         contents: message,

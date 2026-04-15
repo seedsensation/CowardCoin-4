@@ -1,7 +1,7 @@
-use super::Request;
 use super::User;
 use super::file_management::{load_from_file, save_to_file};
-use std::sync::mpsc::Receiver;
+use crate::communication::Request;
+use tokio::sync::mpsc::Receiver;
 use tokio::time::{self, Duration, Interval};
 
 pub struct Server {

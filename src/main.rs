@@ -1,15 +1,16 @@
+pub mod coin_server;
+pub mod communication;
+pub mod helpers;
+
 use std::collections::HashMap;
 
 use coin_server::Coin;
 use coin_server::Rarity;
-use coin_server::Request;
 use coin_server::Server;
 use coin_server::User;
+use communication::Request;
 
-use std::sync::mpsc::{channel, sync_channel};
-
-mod coin_server;
-mod helpers;
+use tokio::sync::mpsc::channel;
 
 fn rarity_test() {
     let mut values: HashMap<Rarity, i32> = HashMap::new();
@@ -44,7 +45,7 @@ fn main() {
     rarity_test();
     // generation_benchmark()
 
-    let (tx, rx) = channel::<Request>();
+    let (tx, rx) = channel::<Request>(100usize);
 
     let mut server = Server::load(rx);
     server.users.push(User {
