@@ -14,13 +14,18 @@ impl Server {
                 if let Err(why) = request
                     .reply_to
                     .send(match request.command {
-                        Command::GetCoin => Some("Not yet implemented get coin".into()),
+                        // get coin - not implemented
+                        Command::GetCoin => None,
+
+                        // coin count
                         Command::CoinCount(id) => Some(server.coin_count(vec![id]).await),
                         Command::CoinCountMultiple(ids) => Some(server.coin_count(ids).await),
-                        Command::CoinLeaderboard(_) => {
-                            Some("Not yet implemented leaderboard".into())
-                        }
-                        Command::GiveCoin(_, _) => Some("Not yet implemented give".into()),
+
+                        // coin leaderboard
+                        Command::CoinLeaderboard(_id) => None,
+
+                        // give coin
+                        Command::GiveCoin(_sender, _recipient) => None,
                     })
                     .await
                 {
