@@ -1,0 +1,20 @@
+#+title: CowardCoin v4
+
+* About the Project
+This is the 4th edition of CowardCoin, my Discord bot that creates coins at random intervals.
+
+* Project Structure
+Rust's memory safety means that the Discord bot itself will be unable to access the data - and I'm getting around that by running it on two separate threads.
+When the bot receives a command, it will send an enum of the request to the backend, which will reply with an SRC_rust{Option<String>} object - the message to reply to the command with.
+
+** Commands
+The commands themselves will be structured as an enum. The commands I need to implement are:
+
+- [ ] Get Coin
+- [ ] Coin Count
+- [ ] Coin Leaderboard
+- [ ] Give Coin
+
+Everything else can be added later, but this is the core.
+
+
