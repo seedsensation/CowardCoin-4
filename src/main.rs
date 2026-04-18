@@ -15,7 +15,6 @@ use tokio::{
 
 use bot::Handler;
 use communication::Request;
-pub use user::User;
 
 #[tokio::main]
 async fn main() {

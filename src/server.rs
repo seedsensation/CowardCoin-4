@@ -1,5 +1,6 @@
 use tokio::sync::mpsc::Receiver;
 
+use crate::communication::DiscordUser;
 use crate::communication::{Command, Request};
 
 pub struct Server {}
@@ -10,7 +11,6 @@ impl Server {
         loop {
             println!("Server running!");
             if let Some(request) = receiver.recv().await {
-                println!("doing something...");
                 if let Err(why) = request
                     .reply_to
                     .send(match request.command {
@@ -18,8 +18,8 @@ impl Server {
                         Command::GetCoin => None,
 
                         // coin count
-                        Command::CoinCount(id) => Some(server.coin_count(vec![id]).await),
-                        Command::CoinCountMultiple(ids) => Some(server.coin_count(ids).await),
+                        Command::CoinCount(user) => Some(server.coin_count(vec![user]).await),
+                        Command::CoinCountMultiple(users) => Some(server.coin_count(users).await),
 
                         // coin leaderboard
                         Command::CoinLeaderboard(_id) => None,
@@ -34,12 +34,10 @@ impl Server {
             }
         }
     }
-
-    async fn coin_count(&self, ids: Vec<u64>) -> String {
+    async fn coin_count(&self, users: Vec<DiscordUser>) -> String {
         let mut output: String = "".into();
-        for id in ids {
-            output.push_str(&id.to_string());
-            output.push_str("\n");
+        for user in users {
+            output.push_str(&format!("{} has 0 coins.\n", user.display_name));
         }
         output
     }

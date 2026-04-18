@@ -1,4 +1,3 @@
-use crate::User;
 use crate::communication::*;
 
 use serenity::async_trait;
@@ -17,11 +16,9 @@ pub struct Handler {
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
-        println!("Message received!");
         if msg.content.to_lowercase().starts_with("coin")
             || msg.content.to_lowercase().starts_with("get")
         {
-            println!("command received");
             if let Some(message) = match msg
                 .content
                 .to_lowercase()
@@ -34,22 +31,22 @@ impl EventHandler for Handler {
                 // coin count
                 Some(&"count") => match msg.mentions.is_empty() {
                     true => {
-                        self.send_command(Command::CoinCount(msg.author.id.get()))
+                        self.send_command(Command::CoinCount(msg.author.into()))
                             .await
                     }
                     false => {
                         self.send_command(Command::CoinCountMultiple(
                             msg.mentions
                                 .iter()
-                                .map(|x| x.id.get())
-                                .collect::<Vec<u64>>(),
+                                .map(|x| x.into())
+                                .collect::<Vec<DiscordUser>>(),
                         ))
                         .await
                     }
                 },
                 // coin leaderboard
                 Some(&"leaderboard") => {
-                    self.send_command(Command::CoinLeaderboard(msg.author.id.get()))
+                    self.send_command(Command::CoinLeaderboard(msg.author.into()))
                         .await
                 }
                 // give coin
@@ -57,11 +54,11 @@ impl EventHandler for Handler {
                     true => Some("Please make sure you are giving someone a coin.".into()),
                     false => {
                         self.send_command(Command::GiveCoin(
-                            msg.author.id.get(),
+                            msg.author.into(),
                             msg.mentions
                                 .iter()
-                                .map(|x| x.id.get())
-                                .collect::<Vec<u64>>(),
+                                .map(|x| x.into())
+                                .collect::<Vec<DiscordUser>>(),
                         ))
                         .await
                     }
