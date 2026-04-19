@@ -2,8 +2,11 @@ use std::fs;
 
 use tokio::sync::mpsc::Receiver;
 
+use crate::Coin;
+use crate::Rarity;
 use crate::communication::DiscordUser;
 use crate::communication::{Command, Request};
+use crate::helpers::s_if;
 use crate::user::User;
 
 use serde::{Deserialize, Serialize};
@@ -12,7 +15,7 @@ use serde_json::Result;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Server {
     pub users: Vec<User>,
-    pub coin_present: bool,
+    pub coin: Coin,
 }
 
 impl Server {
@@ -26,7 +29,7 @@ impl Server {
         )
         .unwrap_or_else(|_| Self {
             users: vec![],
-            coin_present: false,
+            coin: Coin::none(),
         })
     }
 
@@ -115,8 +118,11 @@ impl Server {
     }
 
     fn get_coin(&mut self, id: u64) -> Option<String> {
-        if self.coin_present {
-            self.get_mut_user_from_id(id).coins += 1;
+        if !self.coin.is_none() {
+            {
+                self.get_mut_user_from_id(id).coins += self.coin.value;
+                self.clear_coin();
+            }
             let user = self.get_user_from_id(id);
             Some(format!(
                 "You got a coin!\nYou now have {} coin{}.",
@@ -129,19 +135,14 @@ impl Server {
     }
 
     fn create_coin(&mut self) -> Option<String> {
-        if self.coin_present {
+        if !self.coin.is_none() {
             Some("A coin already exists!".into())
         } else {
-            self.coin_present = true;
-            Some("A coin appeared!".into())
+            self.coin = Coin::new();
+            Some(self.coin.arrival_message())
         }
     }
-}
-
-fn s_if(val: i64) -> String {
-    match val {
-        1 => "",
-        _ => "s",
+    fn clear_coin(&mut self) {
+        self.coin = Coin::none();
     }
-    .into()
 }

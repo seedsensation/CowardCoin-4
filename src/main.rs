@@ -1,7 +1,10 @@
 extern crate dotenv;
 
 pub mod bot;
+mod coin;
 pub mod communication;
+pub mod helpers;
+mod rarity;
 mod server;
 mod user;
 
@@ -12,6 +15,9 @@ use tokio::{
     sync::mpsc::{Receiver, Sender, channel},
     task,
 };
+
+pub use coin::Coin;
+pub use rarity::Rarity;
 
 use bot::Handler;
 use communication::Request;

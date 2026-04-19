@@ -1,6 +1,7 @@
 use crate::communication::*;
 
 use serenity::async_trait;
+use serenity::futures::future::join_all;
 use serenity::model::channel::Message;
 use serenity::prelude::*;
 use std::env;
@@ -19,6 +20,7 @@ impl EventHandler for Handler {
         if msg.content.to_lowercase().starts_with("coin")
             || msg.content.to_lowercase().starts_with("get")
         {
+            let user_object = DiscordUser::from_user(&msg.author, &ctx.http, msg.guild_id).await;
             if let Some(message) = match msg
                 .content
                 .to_lowercase()
@@ -29,14 +31,11 @@ impl EventHandler for Handler {
                 Some(&"create") => self.send_command(Command::CreateCoin).await,
                 // get coin
                 Some(&"get") | Some(&"coin") | None => {
-                    self.send_command(Command::GetCoin(msg.author.into())).await
+                    self.send_command(Command::GetCoin(user_object)).await
                 }
                 // coin count
                 Some(&"count") => match msg.mentions.is_empty() {
-                    true => {
-                        self.send_command(Command::CoinCount(msg.author.into()))
-                            .await
-                    }
+                    true => self.send_command(Command::CoinCount(user_object)).await,
                     false => {
                         self.send_command(Command::CoinCountMultiple(
                             msg.mentions
@@ -49,7 +48,7 @@ impl EventHandler for Handler {
                 },
                 // coin leaderboard
                 Some(&"leaderboard") => {
-                    self.send_command(Command::CoinLeaderboard(msg.author.into()))
+                    self.send_command(Command::CoinLeaderboard(user_object))
                         .await
                 }
                 // give coin
