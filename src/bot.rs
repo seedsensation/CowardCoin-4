@@ -26,8 +26,11 @@ impl EventHandler for Handler {
                 .collect::<Vec<&str>>()
                 .get(1)
             {
+                Some(&"create") => self.send_command(Command::CreateCoin).await,
                 // get coin
-                Some(&"get") | Some(&"coin") | None => self.send_command(Command::GetCoin).await,
+                Some(&"get") | Some(&"coin") | None => {
+                    self.send_command(Command::GetCoin(msg.author.into())).await
+                }
                 // coin count
                 Some(&"count") => match msg.mentions.is_empty() {
                     true => {

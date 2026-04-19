@@ -187,6 +187,8 @@ name = "cowardcoin"
 version = "0.1.0"
 dependencies = [
  "dotenv",
+ "serde",
+ "serde_json",
  "serenity",
  "tokio",
 ]

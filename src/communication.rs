@@ -2,11 +2,12 @@ use serenity::all::User;
 use tokio::sync::mpsc::{Receiver, Sender};
 
 pub enum Command {
-    GetCoin,
+    GetCoin(DiscordUser),
     CoinCount(DiscordUser),
     CoinCountMultiple(Vec<DiscordUser>),
     CoinLeaderboard(DiscordUser),
     GiveCoin(DiscordUser, Vec<DiscordUser>),
+    CreateCoin,
 }
 
 pub struct Request {
