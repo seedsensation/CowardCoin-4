@@ -33,7 +33,10 @@ async fn main() {
         | GatewayIntents::DIRECT_MESSAGES
         | GatewayIntents::MESSAGE_CONTENT;
     let mut client = Client::builder(&token, intents)
-        .event_handler(Handler { sender: tx })
+        .event_handler(Handler {
+            sender: tx,
+            coin_message: None,
+        })
         .await
         .expect("Error creating client...");
 

@@ -1,5 +1,6 @@
 use crate::communication::*;
 
+use serenity::all::{GuildId, User};
 use serenity::async_trait;
 use serenity::futures::future::join_all;
 use serenity::model::channel::Message;
@@ -38,10 +39,7 @@ impl EventHandler for Handler {
                     true => self.send_command(Command::CoinCount(user_object)).await,
                     false => {
                         self.send_command(Command::CoinCountMultiple(
-                            msg.mentions
-                                .iter()
-                                .map(|x| x.into())
-                                .collect::<Vec<DiscordUser>>(),
+                            get_usernames(msg.mentions, &ctx.http, msg.guild_id).await,
                         ))
                         .await
                     }
@@ -57,10 +55,7 @@ impl EventHandler for Handler {
                     false => {
                         self.send_command(Command::GiveCoin(
                             msg.author.into(),
-                            msg.mentions
-                                .iter()
-                                .map(|x| x.into())
-                                .collect::<Vec<DiscordUser>>(),
+                            get_usernames(msg.mentions, &ctx.http, msg.guild_id).await,
                         ))
                         .await
                     }
@@ -101,4 +96,16 @@ impl Handler {
             return Some("There was an error communicating with the server.".into());
         }
     }
+}
+
+async fn get_usernames<T>(users: Vec<User>, http: T, guild_id: Option<GuildId>) -> Vec<DiscordUser>
+where
+    T: CacheHttp,
+{
+    join_all(
+        users
+            .iter()
+            .map(|x| async { DiscordUser::from_user(x, &http, guild_id).await }),
+    )
+    .await
 }
