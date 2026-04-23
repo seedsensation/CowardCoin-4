@@ -4,17 +4,17 @@ use tokio::sync::mpsc::Receiver;
 
 use crate::Coin;
 use crate::Rarity;
-use crate::communication::DiscordUser;
+use crate::communication::BotUser;
 use crate::communication::{Command, Request};
 use crate::helpers::s_if;
-use crate::user::User;
+use crate::user::CoinUser;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Server {
-    pub users: Vec<User>,
+    pub users: Vec<CoinUser>,
     pub coin: Coin,
 }
 
@@ -23,7 +23,8 @@ impl Server {
         serde_json::from_reader(
             fs::OpenOptions::new()
                 .read(true)
-                .create(false)
+                .write(true)
+                .create(true)
                 .open("./data.json")
                 .unwrap(),
         )
@@ -59,7 +60,7 @@ impl Server {
                     .reply_to
                     .send(match request.command {
                         // get coin - not implemented
-                        Command::GetCoin(user) => server.get_coin(user.id),
+                        Command::GetCoin(user) => server.get_coin(user),
 
                         // coin count
                         Command::CoinCount(user) => Some(server.coin_count(vec![user]).await),
@@ -81,14 +82,14 @@ impl Server {
             server.save().ok();
         }
     }
-    async fn coin_count(&mut self, users: Vec<DiscordUser>) -> String {
+    async fn coin_count(&mut self, users: Vec<BotUser>) -> String {
         self.users.sort();
         let mut output: String = "".into();
         for temp_user in users {
-            let user = self.get_user_from_id(temp_user.id);
+            let user = self.get_user_from_id(&temp_user);
             output.push_str(&format!(
                 "{} has {} coin{}.\n",
-                temp_user.display_name,
+                user.nickname.clone().unwrap_or(temp_user.display_name),
                 user.coins,
                 s_if(user.coins)
             ));
@@ -96,34 +97,46 @@ impl Server {
         output
     }
 
-    fn get_user_from_id(&mut self, id: u64) -> &User {
+    fn get_user_from_id(&mut self, user: &BotUser) -> &CoinUser {
         self.users.sort();
-        if let Ok(v) = self.users.binary_search_by_key(&id, |x| x.id) {
+        if let Ok(v) = self.users.binary_search_by_key(&user.id, |x| x.id) {
+            {
+                let new_user = self.users.get_mut(v).unwrap();
+                if user.nickname != new_user.nickname && user.nickname.is_some() {
+                    new_user.nickname = user.nickname.clone();
+                }
+            }
             self.users.get(v).unwrap()
         } else {
-            println!("Creating new item for user {id}");
-            self.users.push(User::new(id));
+            println!("Creating new item for user {}", user.id);
+            self.users
+                .push(CoinUser::new(user.id, user.nickname.clone()));
             self.users.last().unwrap()
         }
     }
-    fn get_mut_user_from_id(&mut self, id: u64) -> &mut User {
+    fn get_mut_user_from_id(&mut self, user: &BotUser) -> &mut CoinUser {
         self.users.sort();
-        if let Ok(v) = self.users.binary_search_by_key(&id, |x| x.id) {
-            self.users.get_mut(v).unwrap()
+        if let Ok(v) = self.users.binary_search_by_key(&user.id, |x| x.id) {
+            let new_user = self.users.get_mut(v).unwrap();
+            if user.nickname != new_user.nickname && user.nickname.is_some() {
+                new_user.nickname = user.nickname.clone();
+            }
+            new_user
         } else {
-            self.users.push(User::new(id));
+            self.users
+                .push(CoinUser::new(user.id, user.nickname.clone()));
             let output = self.users.last_mut().unwrap();
             output
         }
     }
 
-    fn get_coin(&mut self, id: u64) -> Option<String> {
+    fn get_coin(&mut self, user: BotUser) -> Option<String> {
         if !self.coin.is_none() {
             {
-                self.get_mut_user_from_id(id).coins += self.coin.value;
+                self.get_mut_user_from_id(&user).coins += self.coin.value;
                 self.clear_coin();
             }
-            let user = self.get_user_from_id(id);
+            let user = self.get_user_from_id(&user);
             Some(format!(
                 "You got a coin!\nYou now have {} coin{}.",
                 user.coins,

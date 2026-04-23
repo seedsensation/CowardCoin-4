@@ -21,7 +21,7 @@ impl EventHandler for Handler {
         if msg.content.to_lowercase().starts_with("coin")
             || msg.content.to_lowercase().starts_with("get")
         {
-            let user_object = DiscordUser::from_user(&msg.author, &ctx.http, msg.guild_id).await;
+            let user_object = BotUser::from_user(&msg.author, &ctx.http, msg.guild_id).await;
             if let Some(message) = match msg
                 .content
                 .to_lowercase()
@@ -39,7 +39,11 @@ impl EventHandler for Handler {
                     true => self.send_command(Command::CoinCount(user_object)).await,
                     false => {
                         self.send_command(Command::CoinCountMultiple(
-                            get_usernames(msg.mentions, &ctx.http, msg.guild_id).await,
+                            // mentions
+                            msg.mentions
+                                .iter()
+                                .map(|x| x.into())
+                                .collect::<Vec<BotUser>>(),
                         ))
                         .await
                     }
@@ -55,7 +59,10 @@ impl EventHandler for Handler {
                     false => {
                         self.send_command(Command::GiveCoin(
                             msg.author.into(),
-                            get_usernames(msg.mentions, &ctx.http, msg.guild_id).await,
+                            msg.mentions
+                                .iter()
+                                .map(|x| x.into())
+                                .collect::<Vec<BotUser>>(),
                         ))
                         .await
                     }
@@ -98,14 +105,14 @@ impl Handler {
     }
 }
 
-async fn get_usernames<T>(users: Vec<User>, http: T, guild_id: Option<GuildId>) -> Vec<DiscordUser>
+async fn get_usernames<T>(users: Vec<User>, http: T, guild_id: Option<GuildId>) -> Vec<BotUser>
 where
     T: CacheHttp,
 {
     join_all(
         users
             .iter()
-            .map(|x| async { DiscordUser::from_user(x, &http, guild_id).await }),
+            .map(|x| async { BotUser::from_user(x, &http, guild_id).await }),
     )
     .await
 }
