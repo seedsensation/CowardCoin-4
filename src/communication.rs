@@ -1,4 +1,9 @@
-use serenity::all::{CacheHttp, Guild, GuildId, Http, User};
+use std::{alloc::GlobalAlloc, sync::Arc};
+
+use serenity::{
+    Result,
+    all::{CacheHttp, Guild, GuildId, Http, Message, User},
+};
 use tokio::sync::mpsc::{Receiver, Sender};
 
 pub enum Command {
@@ -8,6 +13,20 @@ pub enum Command {
     CoinLeaderboard(BotUser),
     GiveCoin(BotUser, Vec<BotUser>),
     CreateCoin,
+    CreateCoinCheck,
+    CoinCreateNotification(Message, Arc<Http>),
+    DeleteCoinMessage,
+}
+
+#[derive(Debug)]
+pub struct CoinMessage {
+    pub msg: Message,
+    pub http: Arc<Http>,
+}
+impl CoinMessage {
+    pub async fn delete(&mut self) -> Result<()> {
+        self.msg.delete(&self.http).await
+    }
 }
 
 pub struct Request {

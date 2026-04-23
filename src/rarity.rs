@@ -3,8 +3,9 @@ use std::ops::{Add, Sub};
 
 use crate::helpers::*;
 
-#[derive(Hash, Eq, PartialEq, PartialOrd, Clone, Copy, Serialize, Deserialize, Debug)]
+#[derive(Hash, Eq, PartialEq, PartialOrd, Clone, Copy, Serialize, Deserialize, Debug, Default)]
 pub enum Rarity {
+    #[default]
     NONE = 0,
     COMMON = 1,
     UNCOMMON = 2,

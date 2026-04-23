@@ -3,7 +3,7 @@ use crate::helpers::s_if;
 use serde::{Deserialize, Serialize};
 
 /// Struct for handling coins
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Coin {
     pub value: i64,
     pub rarity: Rarity,

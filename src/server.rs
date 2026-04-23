@@ -5,7 +5,7 @@ use tokio::sync::mpsc::Receiver;
 use crate::Coin;
 use crate::Rarity;
 use crate::communication::BotUser;
-use crate::communication::{Command, Request};
+use crate::communication::{CoinMessage, Command, Request};
 use crate::helpers::s_if;
 use crate::user::CoinUser;
 
@@ -15,7 +15,10 @@ use serde_json::Result;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Server {
     pub users: Vec<CoinUser>,
+    #[serde(skip)]
     pub coin: Coin,
+    #[serde(skip)]
+    pub coin_message: Option<CoinMessage>,
 }
 
 impl Server {
@@ -31,6 +34,7 @@ impl Server {
         .unwrap_or_else(|_| Self {
             users: vec![],
             coin: Coin::none(),
+            coin_message: None,
         })
     }
 
@@ -60,7 +64,7 @@ impl Server {
                     .reply_to
                     .send(match request.command {
                         // get coin - not implemented
-                        Command::GetCoin(user) => server.get_coin(user),
+                        Command::GetCoin(user) => server.get_coin(user).await,
 
                         // coin count
                         Command::CoinCount(user) => Some(server.coin_count(vec![user]).await),
@@ -73,6 +77,27 @@ impl Server {
                         Command::GiveCoin(_sender, _recipient) => None,
 
                         Command::CreateCoin => server.create_coin(),
+                        Command::CreateCoinCheck => {
+                            if server.coin_message.is_none() {
+                                server.create_coin()
+                            } else {
+                                None
+                            }
+                        }
+                        Command::CoinCreateNotification(msg, http) => {
+                            server.coin_message = Some(CoinMessage {
+                                msg: msg,
+                                http: http,
+                            });
+                            None
+                        }
+                        Command::DeleteCoinMessage => {
+                            if let Some(mut message) = server.coin_message {
+                                let _ = message.delete().await;
+                            };
+                            server.coin_message = None;
+                            None
+                        }
                     })
                     .await
                 {
@@ -130,12 +155,20 @@ impl Server {
         }
     }
 
-    fn get_coin(&mut self, user: BotUser) -> Option<String> {
+    async fn get_coin(&mut self, user: BotUser) -> Option<String> {
         if !self.coin.is_none() {
             {
                 self.get_mut_user_from_id(&user).coins += self.coin.value;
                 self.clear_coin();
             }
+
+            if let Some(msg) = self.coin_message.as_mut() {
+                if let Err(why) = msg.delete().await {
+                    println!("Error deleting coin message: {why:?}");
+                };
+            }
+            self.coin_message = None;
+
             let user = self.get_user_from_id(&user);
             Some(format!(
                 "You got a coin!\nYou now have {} coin{}.",
