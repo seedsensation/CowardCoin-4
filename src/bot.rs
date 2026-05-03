@@ -5,6 +5,7 @@ use serenity::futures::future::join_all;
 use serenity::model::channel::Message;
 use serenity::prelude::*;
 use serenity::{Result, async_trait};
+use std::cmp::Ordering;
 
 use tokio::sync::mpsc::{Sender, channel};
 use tokio::task;
@@ -32,15 +33,13 @@ impl EventHandler for Handler {
         if msg.content.to_lowercase().starts_with("coin")
             || msg.content.to_lowercase().starts_with("get")
         {
-            ctx.http.broadcast_typing(msg.channel_id);
+            let _ = ctx.http.broadcast_typing(msg.channel_id).await;
             let user_object = BotUser::from_user(&msg.author, &ctx.http, msg.guild_id).await;
-            if let Some(message) = match msg
-                .content
-                .to_lowercase()
-                .split(" ")
-                .collect::<Vec<&str>>()
-                .get(1)
-            {
+            let message_content = msg.content.to_lowercase();
+            let msg_words = message_content.split(" ").collect::<Vec<&str>>();
+            let second_word = msg_words.get(1).clone();
+
+            if let Some(message) = match second_word {
                 Some(&"create") => self.send_command(Command::CreateCoin).await,
                 Some(&"delete") => self.send_command(Command::DeleteCoinMessage).await,
                 // get coin
@@ -66,19 +65,45 @@ impl EventHandler for Handler {
                     self.send_command(Command::CoinLeaderboard(user_object))
                         .await
                 }
-                // give coin
-                Some(&"give") => match msg.mentions.is_empty() {
-                    true => Some("Please make sure you are giving someone a coin.".into()),
-                    false => {
-                        self.send_command(Command::GiveCoin(
-                            msg.author.into(),
-                            msg.mentions
-                                .iter()
-                                .map(|x| x.into())
-                                .collect::<Vec<BotUser>>(),
-                        ))
-                        .await
+                Some(&"give") => match msg.mentions.len().cmp(&1) {
+                    // check how many people the give coin command mentions
+                    // mentions less than one person
+                    Ordering::Less => {
+                        Some("Please make sure you are giving someone a coin.".into())
                     }
+                    // mentions more than one person
+                    Ordering::Greater => Some("You can only give coins to one person!".into()),
+                    // mentions one person
+                    Ordering::Equal => match msg_words.len().cmp(&4) {
+                        // if the command has less than 4 words
+                        Ordering::Less => Some("You're forgetting something...".into()),
+                        // 'give' label so we can return the result of the command with
+                        //  a break command
+                        _ => 'give: {
+                            // go through each word
+                            for word in msg_words {
+                                // if it's a valid number
+                                if let Ok(val) = str::parse::<i32>(word) {
+                                    // if the number isn't negative
+                                    if val >= 0 {
+                                        // send it
+                                        break 'give self
+                                            .send_command(Command::GiveCoin(
+                                                msg.author.into(),
+                                                msg.mentions.get(0).unwrap().into(),
+                                                val as u64,
+                                            ))
+                                            .await;
+                                    } else {
+                                        // if the number's negative
+                                        break 'give Some("You can't give negative coins!".into());
+                                    }
+                                }
+                            }
+                            // if no number is found
+                            break 'give Some("Did you include a number?".into());
+                        }
+                    },
                 },
                 _ => {
                     println!("Unrecognised command...");

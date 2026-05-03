@@ -74,9 +74,12 @@ impl Server {
                         Command::CoinLeaderboard(_id) => None,
 
                         // give coin
-                        Command::GiveCoin(_sender, _recipient) => None,
+                        Command::GiveCoin(sender, recipient, amount) => {
+                            Some(server.give_coin(sender, recipient, amount))
+                        }
 
                         Command::CreateCoin => server.create_coin(),
+
                         Command::CreateCoinCheck => {
                             if server.coin_message.is_none() {
                                 server.create_coin()
@@ -190,5 +193,11 @@ impl Server {
     }
     fn clear_coin(&mut self) {
         self.coin = Coin::none();
+    }
+
+    fn give_coin(&mut self, sender: BotUser, recipient: BotUser, amount: u64) -> String {
+        let sender = self.get_mut_user_from_id(&sender);
+        let recipient = self.get_mut_user_from_id(&recipient);
+        "".into()
     }
 }

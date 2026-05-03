@@ -11,7 +11,7 @@ pub enum Command {
     CoinCount(BotUser),
     CoinCountMultiple(Vec<BotUser>),
     CoinLeaderboard(BotUser),
-    GiveCoin(BotUser, Vec<BotUser>),
+    GiveCoin(BotUser, BotUser, u64),
     CreateCoin,
     CreateCoinCheck,
     CoinCreateNotification(Message, Arc<Http>),
