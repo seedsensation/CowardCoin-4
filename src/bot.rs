@@ -33,7 +33,6 @@ impl EventHandler for Handler {
         if msg.content.to_lowercase().starts_with("coin")
             || msg.content.to_lowercase().starts_with("get")
         {
-            let _ = ctx.http.broadcast_typing(msg.channel_id).await;
             let user_object = BotUser::from_user(&msg.author, &ctx.http, msg.guild_id).await;
             let message_content = msg.content.to_lowercase();
             let msg_words = message_content.split(" ").collect::<Vec<&str>>();
@@ -44,12 +43,14 @@ impl EventHandler for Handler {
                 Some(&"delete") => self.send_command(Command::DeleteCoinMessage).await,
                 // get coin
                 Some(&"get") | Some(&"coin") | None => {
+                    let _ = ctx.http.broadcast_typing(msg.channel_id).await;
                     self.send_command(Command::GetCoin(user_object)).await
                 }
                 // coin count
                 Some(&"count") => match msg.mentions.is_empty() {
                     true => self.send_command(Command::CoinCount(user_object)).await,
                     false => {
+                        let _ = ctx.http.broadcast_typing(msg.channel_id).await;
                         self.send_command(Command::CoinCountMultiple(
                             // mentions
                             msg.mentions
@@ -62,6 +63,7 @@ impl EventHandler for Handler {
                 },
                 // coin leaderboard
                 Some(&"leaderboard") => {
+                    let _ = ctx.http.broadcast_typing(msg.channel_id).await;
                     self.send_command(Command::CoinLeaderboard(user_object))
                         .await
                 }
@@ -80,18 +82,22 @@ impl EventHandler for Handler {
                         // 'give' label so we can return the result of the command with
                         //  a break command
                         _ => 'give: {
+                            let _ = ctx.http.broadcast_typing(msg.channel_id).await;
                             // go through each word
                             for word in msg_words {
                                 // if it's a valid number
-                                if let Ok(val) = str::parse::<i32>(word) {
+                                if let Ok(val) = str::parse::<f64>(word) {
+                                    if val > i64::MAX as f64 {
+                                        break 'give Some("That number's too large!".into());
+                                    } else
                                     // if the number isn't negative
-                                    if val >= 0 {
+                                    if val >= 0.0 {
                                         // send it
                                         break 'give self
                                             .send_command(Command::GiveCoin(
                                                 msg.author.into(),
                                                 msg.mentions.get(0).unwrap().into(),
-                                                val as u64,
+                                                val as i64,
                                             ))
                                             .await;
                                     } else {
@@ -105,6 +111,17 @@ impl EventHandler for Handler {
                         }
                     },
                 },
+                Some(&"arena") => {
+                    self.send_command(Command::Arena(
+                        user_object,
+                        msg_words
+                            .iter()
+                            .map(|x| (*x).into())
+                            .collect::<Vec<String>>(),
+                    ))
+                    .await
+                }
+
                 _ => {
                     println!("Unrecognised command...");
                     None

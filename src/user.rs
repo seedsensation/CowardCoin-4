@@ -9,6 +9,12 @@ pub struct CoinUser {
 
     #[serde(default)]
     pub coins: i64,
+
+    #[serde(default)]
+    pub xp: i64,
+
+    #[serde(default)]
+    pub level: i64,
 }
 
 impl CoinUser {
@@ -17,6 +23,25 @@ impl CoinUser {
             id: id,
             nickname: nickname,
             coins: 0,
+            xp: 0,
+            level: 1,
+        }
+    }
+
+    pub fn add_xp(&mut self, amount: i64) {
+        self.xp += amount;
+        while self.xp >= 100 {
+            self.xp -= 100;
+            self.level += 1;
+        }
+    }
+    pub fn add_xp_with_response(&mut self, amount: i64) -> String {
+        let level = self.level.clone();
+        self.add_xp(amount);
+        if self.level > level {
+            format!("\nYou are now Level {}!", self.level)
+        } else {
+            "".into()
         }
     }
 }

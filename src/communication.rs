@@ -11,11 +11,12 @@ pub enum Command {
     CoinCount(BotUser),
     CoinCountMultiple(Vec<BotUser>),
     CoinLeaderboard(BotUser),
-    GiveCoin(BotUser, BotUser, u64),
+    GiveCoin(BotUser, BotUser, i64),
     CreateCoin,
     CreateCoinCheck,
     CoinCreateNotification(Message, Arc<Http>),
     DeleteCoinMessage,
+    Arena(BotUser, Vec<String>),
 }
 
 #[derive(Debug)]
