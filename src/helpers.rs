@@ -1,10 +1,17 @@
-use rand::{Rng, distributions::uniform::SampleUniform};
+use std::ops::Range;
 
-pub fn random_between<T>(low: T, high: T) -> T
-where
-    T: Ord + SampleUniform,
-{
-    rand::thread_rng().gen_range(low..high)
+use rand::prelude::*;
+
+pub fn random_between(low: i64, high: i64) -> i64 {
+    (low..high)
+        .collect::<Vec<i64>>()
+        .choose(&mut rand::rng())
+        .unwrap()
+        .clone()
+}
+
+pub fn random_from<'a, T>(vals: &'a Vec<T>) -> &'a T {
+    vals.choose(&mut rand::rng()).unwrap()
 }
 
 pub fn s_if(val: i64) -> String {

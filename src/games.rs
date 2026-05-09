@@ -1,5 +1,8 @@
+use rand::Rng;
+use rand::seq::SliceRandom;
+
 use crate::communication::BotUser;
-use crate::helpers::s_if;
+use crate::helpers::*;
 use crate::server::Server;
 use crate::user::CoinUser;
 
@@ -13,17 +16,83 @@ impl Games for Server {
         self.arena_intro(bot_user)
     }
     fn trick(&mut self, bot_user: BotUser, amount: i64) -> String {
-        "hi".into()
+        // figure out whether a trick is legal
+        let user = self.get_mut_user_from_id(&bot_user);
+
+        if amount <= user.max_coins_for_trick() {
+            // generate coin trick message
+            let points = random_between(1, 100);
+            let trick_crit = points > 90;
+            let trick_fail = points < 25;
+
+            //if trick_fail {
+            //    user.coins -= amount;
+            //} else if trick_crit {
+            //    user.coins += amount;
+            //}
+
+            format!(
+                "You {}, and {}.\n{}\n{}You gained {points} StylePoints™.",
+                // initial trick
+                random_from(&vec![
+                    "launch yourself into the air gracefully",
+                    (String::from("do a kickflip off a ")
+                        + *random_from::<&str>(&vec![
+                            "porpoise",
+                            "turtle",
+                            "dolphin",
+                            "whale",
+                            "small child's head"
+                        ]))
+                    .as_str(),
+                    "open a can of baked beans",
+                    "explode messily all over the place",
+                    (String::from("run rings around a ")
+                        + *random_from::<&str>(&vec![
+                            "pensioner",
+                            "major world leader",
+                            "flesh clone of Barack Obama"
+                        ]))
+                    .as_str(),
+                    "fall out of the International Space Station (without a parachute"
+                ]),
+                // success
+                if trick_fail {
+                    *random_from::<&str>(&vec![
+                        "unfortunately die in the attempt...",
+                        "embarrass yourself horrifically. You'll never be able to recover from this.",
+                        "land head-first on the ground...",
+                        "land on the back of a horse! The horse bucks you off, and you land in a crumpled heap on the ground...",
+                    ])
+                } else if trick_crit {
+                    *random_from::<&str>(&vec![
+                        "land gracefully on one leg!",
+                        "do a quintuple flip before you land!",
+                        "almost fall, but recover in a way that makes it look planned!",
+                        "catch your coins in your mouth halfway through the trick!",
+                        "miraculously survive without a scratch!",
+                        "land on the back of a horse! The horse looks at you, and winks.",
+                    ])
+                } else {
+                    "it's pretty mediocre."
+                },
+                "hi",
+                "hi"
+            )
+
+        // trick successful?
+        } else {
+            format!(
+                "You aren't powerful enough for a trick as dangerous as that!\nTry getting to level {} in the **COIN ARENA** first...",
+                required_level_for_trick(amount, user.coins)
+            )
+        }
     }
 }
 
 impl Server {
     fn arena_intro(&mut self, bot_user: BotUser) -> String {
         let user = self.get_user_from_id(&bot_user);
-        let sender_coin_potential = std::cmp::max(
-            (user.coins as f64 * (1.1 * (user.level as f64 - 1.0))) as i64,
-            user.coins,
-        );
         format!(
             "
 Welcome to the **COIN ARENA**!
@@ -32,7 +101,7 @@ Welcome to the **COIN ARENA**!
 [{}] - {}/100
 Give {} more coin{} to reach the next level.
 
-You can currently do a trick worth {} coin{}.
+Your current strength allows you to perform a **Coin Trick** worth {} coin{}.
 	",
             user.arena_title(),
             user.nickname.clone().unwrap_or(bot_user.display_name),
@@ -43,13 +112,23 @@ You can currently do a trick worth {} coin{}.
             user.xp,
             100 - user.xp,
             s_if(100 - user.xp),
-            sender_coin_potential as i64,
-            s_if(sender_coin_potential as i64)
+            user.max_coins_for_trick(),
+            s_if(user.max_coins_for_trick() as i64)
         )
     }
 }
 
+fn required_level_for_trick(amount: i64, count: i64) -> i64 {
+    // max(coins * (1.1 * (level - 1))) = amount
+    // level = (level / coins / 1.1) + 1
+    f64::ceil((amount as f64 / count as f64 / 1.1 as f64) + 1.0) as i64
+}
+
 impl CoinUser {
+    fn max_coins_for_trick(&self) -> i64 {
+        self.coins + f64::ceil(self.coins as f64 * 0.1 * (self.level - 1) as f64) as i64
+    }
+
     pub fn arena_title(&self) -> String {
         match self.level {
             0..=4 => "Harmless",
