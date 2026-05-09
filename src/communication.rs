@@ -13,9 +13,7 @@ pub enum Command {
     CoinLeaderboard(BotUser),
     GiveCoin(BotUser, BotUser, i64),
     CreateCoin,
-    CreateCoinCheck,
     CoinCreateNotification(Message, Arc<Http>),
-    DeleteCoinMessage,
     Arena(BotUser, Vec<String>),
 }
 

@@ -2,7 +2,9 @@ extern crate dotenv;
 
 pub mod bot;
 mod coin;
+mod commands;
 pub mod communication;
+mod games;
 pub mod helpers;
 mod rarity;
 mod server;
@@ -17,6 +19,7 @@ use tokio::{
 };
 
 pub use coin::Coin;
+pub use commands::CoinCommands;
 pub use rarity::Rarity;
 
 use bot::Handler;

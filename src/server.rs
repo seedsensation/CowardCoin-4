@@ -4,8 +4,11 @@ use tokio::sync::mpsc::Receiver;
 
 use crate::Coin;
 use crate::Rarity;
+use crate::commands::CoinCommands;
 use crate::communication::BotUser;
 use crate::communication::{CoinMessage, Command, Request};
+use crate::games::Games;
+use crate::helpers::random_between;
 use crate::helpers::s_if;
 use crate::user::CoinUser;
 
@@ -19,6 +22,32 @@ pub struct Server {
     pub coin: Coin,
     #[serde(skip)]
     pub coin_message: Option<CoinMessage>,
+}
+
+pub trait ExecuteCommands: CoinCommands {
+    async fn execute_command(&mut self, command: Command) -> Option<String>;
+}
+
+impl<T> ExecuteCommands for T
+where
+    T: CoinCommands + Games,
+{
+    async fn execute_command(&mut self, command: Command) -> Option<String> {
+        use Command::*;
+        match command {
+            GetCoin(bot_user) => self.get_coin(bot_user).await,
+            CoinCount(bot_user) => Some(self.coin_count(vec![bot_user])),
+            CoinCountMultiple(bot_users) => Some(self.coin_count(bot_users)),
+            CoinLeaderboard(bot_user) => Some(self.coin_leaderboard(bot_user)),
+            GiveCoin(sender, recipient, amount) => Some(self.give_coin(sender, recipient, amount)),
+            CreateCoin => self.create_coin(),
+            CoinCreateNotification(message, http) => {
+                self.set_coin_message(message, http);
+                None
+            }
+            Arena(bot_user, items) => Some(self.arena(bot_user, items)),
+        }
+    }
 }
 
 impl Server {
@@ -62,49 +91,7 @@ impl Server {
             if let Some(request) = receiver.recv().await {
                 if let Err(why) = request
                     .reply_to
-                    .send(match request.command {
-                        // get coin - not implemented
-                        Command::GetCoin(user) => server.get_coin(user).await,
-
-                        // coin count
-                        Command::CoinCount(user) => Some(server.coin_count(vec![user]).await),
-                        Command::CoinCountMultiple(users) => Some(server.coin_count(users).await),
-
-                        // coin leaderboard
-                        Command::CoinLeaderboard(id) => Some(server.coin_leaderboard(id)),
-
-                        // give coin
-                        Command::GiveCoin(sender, recipient, amount) => {
-                            Some(server.give_coin(sender, recipient, amount))
-                        }
-
-                        Command::CreateCoin => server.create_coin(),
-
-                        Command::CreateCoinCheck => {
-                            if server.coin_message.is_none() {
-                                server.create_coin()
-                            } else {
-                                None
-                            }
-                        }
-                        Command::CoinCreateNotification(msg, http) => {
-                            server.coin_message = Some(CoinMessage {
-                                msg: msg,
-                                http: http,
-                            });
-                            None
-                        }
-                        Command::DeleteCoinMessage => {
-                            if let Some(mut message) = server.coin_message {
-                                let _ = message.delete().await;
-                            };
-                            server.coin_message = None;
-                            None
-                        }
-                        Command::Arena(sender, msg_words) => {
-                            Some(server.coin_arena(sender, msg_words))
-                        }
-                    })
+                    .send(server.execute_command(request.command).await)
                     .await
                 {
                     println!("Error sending message: {why:?}");
@@ -128,7 +115,7 @@ impl Server {
         output
     }
 
-    fn get_user_from_id(&mut self, user: &BotUser) -> &CoinUser {
+    pub fn get_user_from_id(&mut self, user: &BotUser) -> &CoinUser {
         self.users.sort();
         if let Ok(v) = self.users.binary_search_by_key(&user.id, |x| x.id) {
             {
@@ -145,7 +132,7 @@ impl Server {
             self.users.last().unwrap()
         }
     }
-    fn get_mut_user_from_id(&mut self, user: &BotUser) -> &mut CoinUser {
+    pub fn get_mut_user_from_id(&mut self, user: &BotUser) -> &mut CoinUser {
         self.users.sort();
         if let Ok(v) = self.users.binary_search_by_key(&user.id, |x| x.id) {
             let new_user = self.users.get_mut(v).unwrap();
@@ -194,7 +181,7 @@ impl Server {
             Some(self.coin.arrival_message())
         }
     }
-    fn clear_coin(&mut self) {
+    pub fn clear_coin(&mut self) {
         self.coin = Coin::none();
     }
 
@@ -203,7 +190,15 @@ impl Server {
         if sender_local.coins >= amount
             || sender_local.level >= required_level_for_trick(amount, sender_local.coins)
         {
-            return "Yeah you can afford that".into();
+            let num = random_between(1, 100);
+            if num > 90 {
+                // trick crit, double coins, get xp
+            } else if num <= 25 {
+                // trick fails, lose all coins put in
+            } else {
+                // trick normal, get (coins put in / 10) xp
+            }
+            "done".into()
         } else {
             return format!(
                 "That trick is _too powerful_ for your current level. You should try training in the **Coin Arena™** if you want to become stronger - to do this trick, {}.",

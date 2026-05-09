@@ -37,10 +37,7 @@ impl EventHandler for Handler {
             let message_content = msg.content.to_lowercase();
             let msg_words = message_content.split(" ").collect::<Vec<&str>>();
             let second_word = msg_words.get(1).clone();
-
             if let Some(message) = match second_word {
-                Some(&"create") => self.send_command(Command::CreateCoin).await,
-                Some(&"delete") => self.send_command(Command::DeleteCoinMessage).await,
                 // get coin
                 Some(&"get") | Some(&"coin") | None => {
                     let _ = ctx.http.broadcast_typing(msg.channel_id).await;
@@ -147,7 +144,7 @@ async fn coin_creation_check(
         interval.tick().await;
         // runs every second
         if let Some(coin_message) =
-            Handler::send_command_isolated(&sender, Command::CreateCoinCheck).await
+            Handler::send_command_isolated(&sender, Command::CreateCoin).await
         {
             let message = Into::<ChannelId>::into(COIN_CHANNEL)
                 .send_message(&ctx.http, CreateMessage::new().content(coin_message))
