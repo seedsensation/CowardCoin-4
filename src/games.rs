@@ -24,6 +24,34 @@ impl Games for Server {
             let points = random_between(1, 100);
             let trick_crit = points > 90;
             let trick_fail = points < 25;
+            let string_landing: String;
+            let string_audience: String;
+            let animal = *random_from::<&str>(&vec![
+                "porpoise",
+                "turtle",
+                "dolphin",
+                "whale",
+                "small child's head",
+                "horse",
+                "unicorn",
+                "goldfish",
+                "hammerhead shark",
+                "victorian child covered in coal dust",
+                "christian baby",
+            ]);
+            let person = *random_from::<&str>(&vec![
+                "pensioner",
+                "major world leader",
+                "flesh clone of Barack Obama",
+            ]);
+            let thrown_item = *random_from::<&str>(&vec![
+                "Christian baby",
+                "rotten tomato",
+                "Oscar Trophy",
+                "Nuclear Bomb",
+                "Half Life 2 Gnome Chompsky 3D Model",
+                "Gold CowardCoin",
+            ]);
 
             //if trick_fail {
             //    user.coins -= amount;
@@ -36,25 +64,11 @@ impl Games for Server {
                 // initial trick
                 random_from(&vec![
                     "launch yourself into the air gracefully",
-                    (String::from("do a kickflip off a ")
-                        + *random_from::<&str>(&vec![
-                            "porpoise",
-                            "turtle",
-                            "dolphin",
-                            "whale",
-                            "small child's head"
-                        ]))
-                    .as_str(),
+                    (String::from("do a kickflip off a ") + animal).as_str(),
                     "open a can of baked beans",
                     "explode messily all over the place",
-                    (String::from("run rings around a ")
-                        + *random_from::<&str>(&vec![
-                            "pensioner",
-                            "major world leader",
-                            "flesh clone of Barack Obama"
-                        ]))
-                    .as_str(),
-                    "fall out of the International Space Station (without a parachute"
+                    (String::from("run rings around a ") + person).as_str(),
+                    "fall out of the International Space Station (without a parachute)"
                 ]),
                 // success
                 if trick_fail {
@@ -74,9 +88,59 @@ impl Games for Server {
                         "land on the back of a horse! The horse looks at you, and winks.",
                     ])
                 } else {
-                    "it's pretty mediocre."
+                    *random_from::<&str>(&vec![
+                        "it's pretty mediocre..",
+                        "awkwardly stumble as you land.",
+                        {
+                            string_landing = format!(
+                                "land on the back of a {}, and the {} stares at you in disappointment.",
+                                animal, animal
+                            );
+                            string_landing.as_str()
+                        },
+                        "fall to your knees, shedding a single tear at what could have been.........",
+                    ])
                 },
-                "hi",
+                // crowd reaction
+                if trick_fail {
+                    *random_from::<&str>(&vec![
+                        "The crowd goes wild with dismay, then commits mass suicide.",
+                        "The crowd sighs in relief. They'll be able to get a refund.",
+                        {
+                            let collision = *random_from::<&str>(&vec![
+                                "It explodes as it hits your head.",
+                                "It splatters on the ground.",
+                            ]);
+                            string_audience = format!(
+                                "One member of the crowd throws a {} at you. {}",
+                                thrown_item, collision
+                            );
+                            string_audience.as_str()
+                        },
+                    ])
+                } else if trick_crit {
+                    *random_from::<&str>(&vec![
+                        "The crowd jump out of their seats. Every single one of them does a backflip.",
+                        "The crowd levitate off the ground ominously. Their eyes glow white.",
+                        "The crowd storms the field, and murders the pitcher.",
+                        "The crowd pelts you with perfectly ripe tomatoes, and you eat every single one of them.",
+                        {
+                            string_audience = format!(
+                                "One member of the crowd throws a {} at you. You hit it out of the park, and score a home run!",
+                                thrown_item
+                            );
+                            string_audience.as_str()
+                        },
+                    ])
+                } else {
+                    *random_from::<&str>(&vec![
+                        "The crowd goes 'huh?'.",
+                        "The crowd doesn't notice.",
+                        "The crowd cheers, but you can tell that their heart isn't really in it.",
+                        "One member of the crowd throws a raw egg at you. He swears it should have been hard-boiled.",
+                        "There's a gnome in the crowd. He's watching you.",
+                    ])
+                },
                 "hi"
             )
 
