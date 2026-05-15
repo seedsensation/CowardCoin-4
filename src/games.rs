@@ -11,6 +11,68 @@ pub trait Games {
     fn trick(&mut self, bot_user: BotUser, amount: i64) -> String;
 }
 
+enum TrickState {
+    ERR,
+    FAIL,
+    BAD,
+    GOOD,
+    CRIT,
+}
+
+#[derive(Clone)]
+enum TrickMessage {
+    S(&'static str),
+    O(String),
+}
+
+impl From<&'static str> for TrickMessage {
+    fn from(value: &'static str) -> Self {
+        Self::S(value)
+    }
+}
+
+impl From<String> for TrickMessage {
+    fn from(value: String) -> Self {
+        Self::O(value)
+    }
+}
+
+impl TrickMessage {
+    pub fn format(&self) -> String {
+        match self {
+            Self::O(val) => val.to_string(),
+            Self::S(val) => String::from(*val),
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! choose_message {
+    () => {
+	"`_`".to_string()
+    };
+    ( $( $x:expr),*$(,)*) => {
+        random_from(&vec![$(TrickMessage::from($x),)*]).format()
+    };
+}
+
+impl From<i64> for TrickState {
+    fn from(value: i64) -> Self {
+        use TrickState::*;
+        if value > 100 || value < 0 {
+            ERR
+        } else if value > 90 {
+            CRIT
+        } else if value > 60 {
+            GOOD
+        } else if value > 25 {
+            BAD
+        } else {
+            FAIL
+        }
+    }
+}
+
 impl Games for Server {
     fn arena(&mut self, bot_user: BotUser, command: Vec<String>) -> String {
         self.arena_intro(bot_user)
@@ -22,34 +84,7 @@ impl Games for Server {
         if amount <= user.max_coins_for_trick() {
             // generate coin trick message
             let points = random_between(1, 100);
-            let trick_crit = points > 90;
-            let trick_fail = points < 25;
-            let string_landing: String;
-            let string_audience: String;
-            let animal = *random_from::<&str>(&vec![
-                "porpoise",
-                "turtle",
-                "dolphin",
-                "whale",
-                "small child's head",
-                "horse",
-                "unicorn",
-                "goldfish",
-                "hammerhead shark",
-                "victorian child covered in coal dust",
-                "christian baby",
-            ]);
-            let person = *random_from::<&str>(&vec![
-                "a pensioner",
-                "a major world leader",
-                "a flesh clone of Barack Obama",
-                "Barack Obama",
-                "Joe Biden",
-                "Dave Strider from Homestuck",
-                "a [Walkin' Horse](https://me.rcury.com/walkan)",
-                "Wayne's Radio TV",
-                "Benny from Half Life Funny",
-            ]);
+            let trick_state: TrickState = points.into();
             let thrown_item = *random_from::<&str>(&vec![
                 "Christian baby",
                 "rotten tomato",
@@ -58,104 +93,211 @@ impl Games for Server {
                 "Gold CowardCoin",
             ]);
 
-            //if trick_fail {
-            //    user.coins -= amount;
-            //} else if trick_crit {
-            //    user.coins += amount;
-            //}
+            let distraction = choose_message![
+                "women",
+                "men",
+                "Planet 51: The Game",
+                "CowardCoins",
+                "pigs, hogs and slop",
+                "Dark Admiral Chex Mix",
+                "dave strider",
+                "the meaning of life",
+                "fruit loops",
+                "The Notorious B.U.B.",
+                "World of Warcraft"
+            ];
+            let dangerous_hazard = choose_message![
+                "speeding train",
+                "rake on the ground",
+                "oil spill",
+                "ten-tonne truck",
+                "woke dog",
+                "pride parade",
+                "baked beans on the ground",
+                "shellfish",
+                "crab",
+                "orca",
+                "goldfish",
+                "bowl of Chex Mix (sponsored by Chex Quest)",
+                "fax machine"
+            ];
 
+            // how do i make it choose from a list of strings,
+            // but have those strings also be able to have substitutions?
+            // i think the key is to have it be Strings rather than &str
             format!(
-                "You {}, and {}.\n{}\n{}You gained {points} StylePoints™.",
-                // initial trick
-                random_from(&vec![
+                "You {}, and {}.\n{}\nYou gained {points} StylePoints™.",
+                choose_message![
                     "launch yourself into the air gracefully",
-                    (String::from("do a kickflip off a ") + animal).as_str(),
-                    "open a can of baked beans",
+                    format!(
+                        "do a{} off a {}{}",
+                        choose_message![
+                            "n awesome kickflip",
+                            " frontflip for the ages",
+                            " quintuple grind rail with 100x score multiplier"
+                        ],
+                        choose_message!["little puppy", "wide-eyed baby", "gnome", "pedestrian"],
+                        choose_message![
+                            "",
+                            "",
+                            "",
+                            "",
+                            "'s head",
+                            "'s propeller hat",
+                            "car",
+                            "super-awesome mecha suit"
+                        ]
+                    ),
+                    format!(
+                        "open a {} of {}",
+                        choose_message!["can", "tin", "bottle", "cardboard box", "packet"],
+                        choose_message![
+                            "baked beans",
+                            "barbecue sauce",
+                            "tomato ketchup",
+                            "footy scran",
+                            "happy thoughts",
+                            "mayonnaise"
+                        ]
+                    ),
                     "explode messily all over the place",
-                    (String::from("run rings around ") + person).as_str(),
-                    "fall out of the International Space Station (without a parachute)"
-                ]),
-                // success
-                if trick_fail {
-                    *random_from::<&str>(&vec![
+                    format!(
+                        "fall out of the {} (with{} a parachute)",
+                        choose_message![
+                            "International Space Station",
+                            "Eiffel Tower",
+                            "Burj Khalifa",
+                            "Museum From **Planet 51: The Game**"
+                        ],
+                        choose_message!["", "out"]
+                    )
+                ],
+                match trick_state {
+                    TrickState::ERR => "something goes terribly wrong...".to_string(),
+                    TrickState::FAIL => choose_message![
                         "unfortunately die in the attempt...",
                         "embarrass yourself horrifically. You'll never be able to recover from this.",
                         "land head-first on the ground...",
-                        "land on the back of a horse! The horse bucks you off, and you land in a crumpled heap on the ground...",
-                    ])
-                } else if trick_crit {
-                    *random_from::<&str>(&vec![
+                        "land on the back of a horse! The horse bucks you off, and you land in a crumpled heap on the ground.",
+                        format!(
+                            "are too distracted thinking about {distraction} to see the {dangerous_hazard} right in front of you! {}",
+                            choose_message![
+                                "You are crushed instantly.",
+                                "It slams into your face, and your nose hurts.",
+                                "Oh no! Your wallet's been stolen!",
+                                "You die instantly."
+                            ]
+                        ),
+                        format!(
+                            "break all of the bones in your {}...",
+                            choose_message![
+                                "arm", "leg", "head", "chest", "knee", "elbow", "groin", "foot",
+                                "feet", "hand", "hands"
+                            ]
+                        )
+                    ],
+                    TrickState::CRIT => choose_message![
                         "land gracefully on one leg!",
-                        "do a quintuple flip before you land!",
-                        "almost fall, but recover in a way that makes it look planned!",
-                        "catch your coins in your mouth halfway through the trick!",
+                        format!(
+                            "do a {} flip before you land!",
+                            choose_message![
+                                "double",
+                                "triple",
+                                "quadruple",
+                                "quintuple",
+                                "sextuple"
+                            ]
+                        ),
+                        "almost fall, but recover stylishly in a way that makes it look planned!",
                         "miraculously survive without a scratch!",
                         "land on the back of a horse! The horse looks at you, and winks.",
-                    ])
-                } else {
-                    *random_from::<&str>(&vec![
-                        "it's pretty mediocre..",
+                        format!(
+                            "avoid the temptation of {distraction}, and take the gold medal at the Olympics!"
+                        )
+                    ],
+                    TrickState::BAD | TrickState::GOOD => choose_message![
+                        "it's pretty mediocre...",
                         "awkwardly stumble as you land.",
-                        {
-                            string_landing = format!(
-                                "land on the back of a {}, and the {} stares at you in disappointment.",
-                                animal, animal
-                            );
-                            string_landing.as_str()
-                        },
-                        "fall to your knees, shedding a single tear at what could have been.........",
-                    ])
+                        "land on the back of a horse! The horse stares at you in disappointment.",
+                        "fall to your knees, shedding a single tear at what could have been.",
+                        "sigh, thinking about the good times that you'll never be able to return to.",
+                        format!(
+                            "are too distracted thinking about {distraction} to see the {dangerous_hazard} right in front of you! {}",
+                            choose_message![
+                                "You stub your toe!",
+                                "You dodge out of the way just in time, narrowly avoiding a grisly fate.",
+                                "You barely escape with your life!",
+                                "You survive by the skin of your teeth."
+                            ]
+                        ),
+                    ],
                 },
-                // crowd reaction
-                if trick_fail {
-                    *random_from::<&str>(&vec![
-                        "The crowd goes wild with dismay, then commits mass suicide.",
-                        "The crowd sighs in relief. They'll be able to get a refund.",
-                        {
-                            let collision = *random_from::<&str>(&vec![
-                                "It explodes as it hits your head.",
-                                "It splatters on the ground.",
-                            ]);
-                            string_audience = format!(
-                                "One member of the crowd throws a {} at you. {}",
-                                thrown_item, collision
-                            );
-                            string_audience.as_str()
-                        },
-                    ])
-                } else if trick_crit {
-                    *random_from::<&str>(&vec![
+                match trick_state {
+                    TrickState::CRIT => choose_message![
                         "The crowd jump out of their seats. Every single one of them does a backflip.",
                         "The crowd levitate off the ground ominously. Their eyes glow white.",
                         "The crowd storms the field, and murders the pitcher.",
                         "The crowd pelts you with perfectly ripe tomatoes, and you eat every single one of them.",
-                        {
-                            string_audience = format!(
-                                "One member of the crowd throws a {} at you. You hit it out of the park, and score a home run!",
-                                thrown_item
-                            );
-                            string_audience.as_str()
-                        },
-                    ])
-                } else {
-                    *random_from::<&str>(&vec![
+                        format!(
+                            "One member of the crowd throws a {thrown_item} at you. {}",
+                            choose_message![
+                                "You hit it out of the park, and score a home run!",
+                                "You catch it, and become a national hero!",
+                                "You catch it in your mouth, and swallow it whole!",
+                                "You catch it, and dedicate the rest of your life to caring for it!"
+                            ]
+                        ),
+                    ],
+                    TrickState::GOOD | TrickState::BAD => choose_message![
                         "The crowd goes 'huh?'.",
                         "The crowd doesn't notice.",
                         "The crowd cheers, but you can tell that their heart isn't really in it.",
                         "One member of the crowd throws a raw egg at you. He swears it should have been hard-boiled.",
-                        {
-                            string_audience = format!(
-                                "You see {} in the crowd. They stare at you, disappointed.",
-                                person
-                            );
-                            string_audience.as_str()
-                        },
-                    ])
-                },
-                "hi"
-            )
+                        format!(
+                            "One member of the crowd throws a {thrown_item} at you. {}",
+                            choose_message![
+                                "It flies past you, into the stands.",
+                                "It flies past you, into the street.",
+                                "It flies past you, landing in the grass.",
+                                "You try to catch it, and miss."
+                            ]
+                        ),
+                        format!(
+                            "You can see {} in the crowd. They seem disappointed in you.",
+                            choose_message![
+                                "your parents",
+                                "your entire extended family",
+                                "all of Radio TV Solutions",
+                                "dave strider",
+                                "the Jolly Green Giant",
+                                "the Gerber Daby",
+                                "The Game Chimp",
+                                "PSP",
+                                "UMD",
+                                "Dr. Harold Pontiff Coomer",
+                                "Tommy Coolatta"
+                            ],
+                        )
+                    ],
+                    TrickState::FAIL => choose_message![
+                        "The crowd goes wild with dismay, then commits mass suicide.",
+                        "The crowd sighs in relief. They'll be able to get a refund, at least.",
+                        format!(
+                            "Someone throws a {thrown_item} at you. {}",
+                            choose_message![
+                                "It explodes as it hits your head.",
+                                "It splatters on the ground.",
+                                "It bounces off your head",
+                                "It hits you in your stomach, winding you.",
+                                "It hits you in the back of the knee, forcing you to the ground."
+                            ]
+                        )
+                    ],
 
-        // trick successful?
+                    TrickState::ERR =>
+                        "The crowd glitches. Something has gone terribly wrong.".to_string(),
+                },
+            )
         } else {
             format!(
                 "You aren't powerful enough for a trick as dangerous as that!\nTry getting to level {} in the **COIN ARENA** first...",
