@@ -40,16 +40,21 @@ impl Games for Server {
                 "christian baby",
             ]);
             let person = *random_from::<&str>(&vec![
-                "pensioner",
-                "major world leader",
-                "flesh clone of Barack Obama",
+                "a pensioner",
+                "a major world leader",
+                "a flesh clone of Barack Obama",
+                "Barack Obama",
+                "Joe Biden",
+                "Dave Strider from Homestuck",
+                "a [Walkin' Horse](https://me.rcury.com/walkan)",
+                "Wayne's Radio TV",
+                "Benny from Half Life Funny",
             ]);
             let thrown_item = *random_from::<&str>(&vec![
                 "Christian baby",
                 "rotten tomato",
                 "Oscar Trophy",
                 "Nuclear Bomb",
-                "Half Life 2 Gnome Chompsky 3D Model",
                 "Gold CowardCoin",
             ]);
 
@@ -67,7 +72,7 @@ impl Games for Server {
                     (String::from("do a kickflip off a ") + animal).as_str(),
                     "open a can of baked beans",
                     "explode messily all over the place",
-                    (String::from("run rings around a ") + person).as_str(),
+                    (String::from("run rings around ") + person).as_str(),
                     "fall out of the International Space Station (without a parachute)"
                 ]),
                 // success
@@ -138,7 +143,13 @@ impl Games for Server {
                         "The crowd doesn't notice.",
                         "The crowd cheers, but you can tell that their heart isn't really in it.",
                         "One member of the crowd throws a raw egg at you. He swears it should have been hard-boiled.",
-                        "There's a gnome in the crowd. He's watching you.",
+                        {
+                            string_audience = format!(
+                                "You see {} in the crowd. They stare at you, disappointed.",
+                                person
+                            );
+                            string_audience.as_str()
+                        },
                     ])
                 },
                 "hi"
