@@ -61,11 +61,11 @@ impl From<i64> for TrickState {
         use TrickState::*;
         if value > 100 || value < 0 {
             ERR
-        } else if value > 90 {
+        } else if value >= 85 {
             CRIT
         } else if value > 60 {
             GOOD
-        } else if value > 25 {
+        } else if value >= 20 {
             BAD
         } else {
             FAIL
@@ -74,7 +74,39 @@ impl From<i64> for TrickState {
 }
 
 impl Games for Server {
-    fn arena(&mut self, bot_user: BotUser, command: Vec<String>) -> String {
+    fn arena(&mut self, bot_user: BotUser, input: Vec<String>) -> String {
+        let user = self.get_mut_user_from_id(&bot_user);
+        if let Some(command_upper) = input.get(2) {
+            let command = command_upper.to_lowercase();
+            if command == "train" {
+                if let Some(amount_str) = input.get(3) {
+                    if let Ok(amount) = str::parse::<i64>(amount_str) {
+                        if amount > user.coins {
+                            return "You can't afford to train _that_ hard in the arena."
+                                .to_string();
+                        } else {
+                            user.coins -= amount;
+                            return format!(
+                                "You pay {amount} CowardCoins to {}. You gain {amount} XP.{}",
+                                choose_message![
+                                    "the altar of progress",
+                                    "the shrine of Capitalism",
+                                    "the Gym Gods",
+                                    "the Minotaur",
+                                    "the Coins themselves"
+                                ],
+                                user.add_xp_with_response(amount)
+                            );
+                        }
+                    } else {
+                        return "Please format your message `coin arena train <number>`."
+                            .to_string();
+                    }
+                } else {
+                    return "Please format your message `coin arena train <number>`.".to_string();
+                }
+            }
+        }
         self.arena_intro(bot_user)
     }
     fn trick(&mut self, bot_user: BotUser, amount: i64) -> String {
@@ -126,7 +158,7 @@ impl Games for Server {
             // but have those strings also be able to have substitutions?
             // i think the key is to have it be Strings rather than &str
             format!(
-                "You {}, and {}.\n{}\nYou gained {points} StylePoints™.",
+                "You {}, and {}.\n{}\n{}You gained {points} StylePoints™.",
                 choose_message![
                     "launch yourself into the air gracefully",
                     format!(
@@ -287,7 +319,7 @@ impl Games for Server {
                             choose_message![
                                 "It explodes as it hits your head.",
                                 "It splatters on the ground.",
-                                "It bounces off your head",
+                                "It bounces off your head.",
                                 "It hits you in your stomach, winding you.",
                                 "It hits you in the back of the knee, forcing you to the ground."
                             ]
@@ -297,6 +329,23 @@ impl Games for Server {
                     TrickState::ERR =>
                         "The crowd glitches. Something has gone terribly wrong.".to_string(),
                 },
+                match trick_state {
+                    TrickState::FAIL => {
+                        user.coins -= amount;
+                        format!(
+                            "You lose {amount} coins...\nYou now have {} coins.\n",
+                            user.coins
+                        )
+                    }
+                    TrickState::CRIT => {
+                        user.coins += amount;
+                        format!(
+                            "You gain {amount} coins!!\nYou now have {} coins.\n",
+                            user.coins
+                        )
+                    }
+                    _ => "".to_string(),
+                }
             )
         } else {
             format!(
@@ -315,7 +364,7 @@ impl Server {
 Welcome to the **COIN ARENA**!
 
 {} {} - Lv. {} - {} Coin{}
-[{}] - {}/100
+[{}] - {}/{}
 Give {} more coin{} to reach the next level.
 
 Your current strength allows you to perform a **Coin Trick** worth {} coin{}.
@@ -327,6 +376,7 @@ Your current strength allows you to perform a **Coin Trick** worth {} coin{}.
             s_if(user.coins),
             user.xp_bar(),
             user.xp,
+            user.xp_cap(),
             100 - user.xp,
             s_if(100 - user.xp),
             user.max_coins_for_trick(),
@@ -338,12 +388,22 @@ Your current strength allows you to perform a **Coin Trick** worth {} coin{}.
 fn required_level_for_trick(amount: i64, count: i64) -> i64 {
     // max(coins * (1.1 * (level - 1))) = amount
     // level = (level / coins / 1.1) + 1
-    f64::ceil((amount as f64 / count as f64 / 1.1 as f64) + 1.0) as i64
+    f64::ceil((amount as f64 / f64::max(count as f64, 1f64) / 1.1 as f64) + 1.0) as i64
 }
 
 impl CoinUser {
     fn max_coins_for_trick(&self) -> i64 {
-        self.coins + f64::ceil(self.coins as f64 * 0.1 * (self.level - 1) as f64) as i64
+        if self.coins < 0 {
+            i64::abs(self.coins)
+        } else {
+            let val =
+                self.coins as f64 + f64::ceil(self.coins as f64 * 0.1 * (self.level - 1) as f64);
+            if val < i64::MAX as f64 {
+                val as i64
+            } else {
+                self.coins
+            }
+        }
     }
 
     pub fn arena_title(&self) -> String {
@@ -391,7 +451,9 @@ impl CoinUser {
     }
 
     fn xp_bar(&self) -> String {
-        return "▓".repeat((self.xp / 10) as usize)
-            + "░".repeat(10 - (self.xp / 10) as usize).as_str();
+        return "▓".repeat(((self.xp / self.xp_cap()) * 10) as usize)
+            + "░"
+                .repeat((((self.xp_cap() - self.xp) / self.xp_cap()) * 10) as usize)
+                .as_str();
     }
 }

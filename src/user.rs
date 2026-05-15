@@ -27,6 +27,9 @@ impl CoinUser {
             level: 1,
         }
     }
+    pub fn xp_cap(&self) -> i64 {
+        (100.0 * f64::max(((self.level - 1) as f64 * 0.1) + 1.0, 1.0)) as i64
+    }
 
     pub fn add_xp(&mut self, amount: i64) {
         self.xp += amount;
