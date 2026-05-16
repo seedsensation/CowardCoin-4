@@ -34,6 +34,9 @@ impl CoinCommands for Server {
         }
 
         self.coin_message = None;
+        if let Err(_) = self.save() {
+            return Some("There was an error saving to file.".to_string());
+        }
 
         let user = self.get_user_from_id(&user);
 
@@ -66,7 +69,11 @@ impl CoinCommands for Server {
 
     fn give_coin(&mut self, sender: BotUser, recipient: BotUser, amount: i64) -> String {
         if sender.id == recipient.id {
-            return self.trick(sender, amount);
+            let output = self.trick(sender, amount);
+            if let Err(_) = self.save() {
+                return "There was an error saving to file.".to_string();
+            }
+            return output;
         }
 
         // borrow sender mutably
@@ -88,6 +95,10 @@ impl CoinCommands for Server {
             .clone();
         let recipient_coins = recipient_local.coins.clone();
         // recipient_local is never referenced again, so it is dropped
+
+        if let Err(_) = self.save() {
+            return "There was an error saving to file.".to_string();
+        }
 
         format!(
             "You gave {} coin{} to {}!\nYou now have {} coin{}.\n{} now has {} coin{}.",

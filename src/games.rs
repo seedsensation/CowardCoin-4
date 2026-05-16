@@ -1,6 +1,7 @@
 use rand::Rng;
 use rand::seq::SliceRandom;
 
+use crate::choose_message;
 use crate::communication::BotUser;
 use crate::helpers::*;
 use crate::server::Server;
@@ -17,43 +18,6 @@ enum TrickState {
     BAD,
     GOOD,
     CRIT,
-}
-
-#[derive(Clone)]
-enum TrickMessage {
-    S(&'static str),
-    O(String),
-}
-
-impl From<&'static str> for TrickMessage {
-    fn from(value: &'static str) -> Self {
-        Self::S(value)
-    }
-}
-
-impl From<String> for TrickMessage {
-    fn from(value: String) -> Self {
-        Self::O(value)
-    }
-}
-
-impl TrickMessage {
-    pub fn format(&self) -> String {
-        match self {
-            Self::O(val) => val.to_string(),
-            Self::S(val) => String::from(*val),
-        }
-    }
-}
-
-#[macro_export]
-macro_rules! choose_message {
-    () => {
-	"`_`".to_string()
-    };
-    ( $( $x:expr),*$(,)*) => {
-        random_from(&vec![$(TrickMessage::from($x),)*]).format()
-    };
 }
 
 impl From<i64> for TrickState {
@@ -176,8 +140,8 @@ impl Games for Server {
                             "",
                             "'s head",
                             "'s propeller hat",
-                            "car",
-                            "super-awesome mecha suit"
+                            "'s car",
+                            "'s super-awesome mecha suit"
                         ]
                     ),
                     format!(

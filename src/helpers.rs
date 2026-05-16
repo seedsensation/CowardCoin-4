@@ -28,3 +28,39 @@ pub fn s_if(val: i64) -> String {
     }
     .into()
 }
+
+#[macro_export]
+macro_rules! choose_message {
+    () => {
+	"`_`".to_string()
+    };
+    ( $( $x:expr),*$(,)*) => {
+        random_from(&vec![$(MessageType::from($x),)*]).format()
+    };
+}
+
+#[derive(Clone)]
+pub enum MessageType {
+    S(&'static str),
+    O(String),
+}
+impl From<&'static str> for MessageType {
+    fn from(value: &'static str) -> Self {
+        Self::S(value)
+    }
+}
+
+impl From<String> for MessageType {
+    fn from(value: String) -> Self {
+        Self::O(value)
+    }
+}
+
+impl MessageType {
+    pub fn format(&self) -> String {
+        match self {
+            Self::O(val) => val.to_string(),
+            Self::S(val) => String::from(*val),
+        }
+    }
+}
