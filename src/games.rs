@@ -50,6 +50,10 @@ impl Games for Server {
                                 .to_string();
                         } else {
                             user.coins -= amount;
+                            let response = user.add_xp_with_response(amount);
+                            if let Err(_) = self.save() {
+                                return "Error saving to file.".to_string();
+                            }
                             return format!(
                                 "You pay {amount} CowardCoins to {}. You gain {amount} XP.{}",
                                 choose_message![
@@ -59,7 +63,7 @@ impl Games for Server {
                                     "the Minotaur",
                                     "the Coins themselves"
                                 ],
-                                user.add_xp_with_response(amount)
+                                response
                             );
                         }
                     } else {
@@ -80,6 +84,7 @@ impl Games for Server {
         if amount <= user.max_coins_for_trick() {
             // generate coin trick message
             let points = random_between(1, 100);
+            user.style_points += points;
             let trick_state: TrickState = points.into();
             let thrown_item = *random_from::<&str>(&vec![
                 "Christian baby",
@@ -414,10 +419,10 @@ impl CoinUser {
         }.into()
     }
 
-    fn xp_bar(&self) -> String {
+    pub fn xp_bar(&self) -> String {
         return "▓".repeat(((self.xp / self.xp_cap()) * 10) as usize)
             + "░"
-                .repeat((((self.xp_cap() - self.xp) / self.xp_cap()) * 10) as usize)
+                .repeat(10 - ((self.xp / self.xp_cap()) * 10) as usize)
                 .as_str();
     }
 }

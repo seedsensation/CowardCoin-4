@@ -11,6 +11,9 @@ pub struct CoinUser {
     pub coins: i64,
 
     #[serde(default)]
+    pub style_points: i64,
+
+    #[serde(default)]
     pub xp: i64,
 
     #[serde(default)]
@@ -23,6 +26,7 @@ impl CoinUser {
             id: id,
             nickname: nickname,
             coins: 0,
+            style_points: 0,
             xp: 0,
             level: 1,
         }

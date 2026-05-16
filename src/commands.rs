@@ -57,10 +57,34 @@ impl CoinCommands for Server {
             .map(|x| {
                 let user = self.get_user_from_id(&x);
                 format!(
-                    "{} has {} coin{}.",
+                    "{}**{}** {}\n> - {} coin{}{}{}",
+                    if user.xp > 0 || user.level > 1 {
+                        format!("{} ", user.arena_title())
+                    } else {
+                        String::new()
+                    },
                     user.nickname.clone().unwrap_or(x.display_name.clone()),
+                    if user.xp > 0 || user.level > 1 {
+                        format!("(Lv. {})", user.level)
+                    } else {
+                        String::new()
+                    },
                     user.coins,
-                    s_if(user.coins)
+                    s_if(user.coins),
+                    if user.style_points > 0 {
+                        format!(
+                            "\n> - {} StylePoint{}™",
+                            user.style_points,
+                            s_if(user.style_points)
+                        )
+                    } else {
+                        String::new()
+                    },
+                    if user.xp > 0 || user.level > 1 {
+                        format!("\n> - [{}] - {}/{}", user.xp_bar(), user.xp, user.xp_cap())
+                    } else {
+                        String::new()
+                    },
                 )
             })
             .collect::<Vec<String>>()
@@ -133,47 +157,3 @@ impl CoinCommands for Server {
         });
     }
 }
-
-//match request.command {
-//           // get coin - not implemented
-//           Command::GetCoin(user) => server.get_coin(user).await,
-//
-//           // coin count
-//           Command::CoinCount(user) => Some(server.coin_count(vec![user]).await),
-//           Command::CoinCountMultiple(users) => Some(server.coin_count(users).await),
-//
-//           // coin leaderboard
-//           Command::CoinLeaderboard(id) => Some(server.coin_leaderboard(id)),
-//
-//           // give coin
-//           Command::GiveCoin(sender, recipient, amount) => {
-//               Some(server.give_coin(sender, recipient, amount))
-//           }
-//
-//           Command::CreateCoin => server.create_coin(),
-//
-//           Command::CreateCoinCheck => {
-//               if server.coin_message.is_none() {
-//                   server.create_coin()
-//               } else {
-//                   None
-//               }
-//           }
-//           Command::CoinCreateNotification(msg, http) => {
-//               server.coin_message = Some(CoinMessage {
-//                   msg: msg,
-//                   http: http,
-//               });
-//               None
-//           }
-//           Command::DeleteCoinMessage => {
-//               if let Some(mut message) = server.coin_message {
-//                   let _ = message.delete().await;
-//               };
-//               server.coin_message = None;
-//               None
-//           }
-//           Command::Arena(sender, msg_words) => {
-//               Some(server.coin_arena(sender, msg_words))
-//           }
-//       }
