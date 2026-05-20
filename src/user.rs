@@ -1,11 +1,14 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Ord, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, Ord, Eq)]
 pub struct CoinUser {
     pub id: u64,
 
     #[serde(default)]
     pub nickname: Option<String>,
+
+    #[serde(default)]
+    pub display_name: String,
 
     #[serde(default)]
     pub coins: i64,
@@ -21,9 +24,10 @@ pub struct CoinUser {
 }
 
 impl CoinUser {
-    pub fn new(id: u64, nickname: Option<String>) -> Self {
+    pub fn new(id: u64, nickname: Option<String>, display_name: String) -> Self {
         Self {
             id: id,
+            display_name: display_name,
             nickname: nickname,
             coins: 0,
             style_points: 0,

@@ -105,6 +105,7 @@ impl Server {
         if let Ok(v) = self.users.binary_search_by_key(&user.id, |x| x.id) {
             {
                 let new_user = self.users.get_mut(v).unwrap();
+                new_user.display_name = user.display_name.clone();
                 if user.nickname != new_user.nickname && user.nickname.is_some() {
                     new_user.nickname = user.nickname.clone();
                 }
@@ -112,8 +113,11 @@ impl Server {
             self.users.get(v).unwrap()
         } else {
             println!("Creating new item for user {}", user.id);
-            self.users
-                .push(CoinUser::new(user.id, user.nickname.clone()));
+            self.users.push(CoinUser::new(
+                user.id,
+                user.nickname.clone(),
+                user.display_name.clone(),
+            ));
             self.users.last().unwrap()
         }
     }
@@ -121,13 +125,17 @@ impl Server {
         self.users.sort();
         if let Ok(v) = self.users.binary_search_by_key(&user.id, |x| x.id) {
             let new_user = self.users.get_mut(v).unwrap();
+            new_user.display_name = user.display_name.clone();
             if user.nickname != new_user.nickname && user.nickname.is_some() {
                 new_user.nickname = user.nickname.clone();
             }
             new_user
         } else {
-            self.users
-                .push(CoinUser::new(user.id, user.nickname.clone()));
+            self.users.push(CoinUser::new(
+                user.id,
+                user.nickname.clone(),
+                user.display_name.clone(),
+            ));
             let output = self.users.last_mut().unwrap();
             output
         }

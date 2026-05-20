@@ -6,6 +6,7 @@ use serenity::{
 };
 use tokio::sync::mpsc::{Receiver, Sender};
 
+#[derive(Debug)]
 pub enum Command {
     GetCoin(BotUser),
     CoinCount(BotUser),
@@ -33,6 +34,7 @@ pub struct Request {
     pub reply_to: Sender<Option<String>>,
 }
 
+#[derive(Debug)]
 pub struct BotUser {
     pub display_name: String,
     pub nickname: Option<String>,

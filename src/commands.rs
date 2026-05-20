@@ -8,13 +8,14 @@ use crate::communication::{BotUser, CoinMessage};
 use crate::games::*;
 use crate::helpers::s_if;
 use crate::server::Server;
+use crate::user::CoinUser;
 
 pub trait CoinCommands {
     fn get_coin(&mut self, user: BotUser) -> impl Future<Output = Option<String>>;
     fn coin_count(&mut self, users: Vec<BotUser>) -> String;
     fn give_coin(&mut self, sender: BotUser, recipient: BotUser, amount: i64) -> String;
     fn create_coin(&mut self) -> Option<String>;
-    fn coin_leaderboard(&self, id: BotUser) -> String;
+    fn coin_leaderboard(&mut self, id: BotUser) -> String;
     fn set_coin_message(&mut self, message: Message, http: Arc<Http>) -> impl Future<Output = ()>;
 }
 
@@ -146,8 +147,38 @@ impl CoinCommands for Server {
         Some(self.coin.arrival_message())
     }
 
-    fn coin_leaderboard(&self, id: BotUser) -> String {
-        "Coin leaderboard hasn't been implemented yet, sorry...".into()
+    fn coin_leaderboard(&mut self, id: BotUser) -> String {
+        // get list of every member, sorted by coin count
+        let mut sorted_users = self.users.clone();
+        sorted_users.sort_by(|x, y| y.coins.cmp(&x.coins));
+        let user = self.get_user_from_id(&id);
+
+        (0..(usize::min(10, sorted_users.len())))
+            .into_iter()
+            .map(|n| {
+                let this_user = sorted_users.get(n as usize).expect(
+                    format!(
+                        "Fewer members of leaderboard than expected - {}, {}",
+                        n,
+                        sorted_users.len()
+                    )
+                    .as_str(),
+                );
+                let bold = if this_user.id == user.id { "**" } else { "" };
+                format!(
+                    "{}. {}{}{} - {} coins\n",
+                    n + 1,
+                    bold,
+                    this_user
+                        .nickname
+                        .clone()
+                        .unwrap_or(this_user.display_name.clone()),
+                    bold,
+                    this_user.coins
+                )
+            })
+            .collect::<Vec<String>>()
+            .join("")
     }
 
     async fn set_coin_message(&mut self, message: Message, http: Arc<Http>) {

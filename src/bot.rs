@@ -1,4 +1,5 @@
 use crate::communication::*;
+use crate::helpers::random_between;
 
 use serenity::all::{ChannelId, CreateMessage, GuildId, MessageBuilder, Ready, User};
 use serenity::futures::future::join_all;
@@ -12,9 +13,9 @@ use tokio::task;
 use tokio::time::{self, Duration};
 
 // debug
-const COIN_CHANNEL: u64 = 1368929242229903360;
+//const COIN_CHANNEL: u64 = 1368929242229903360;
 // active
-//const COIN_CHANNEL: u64 = 813898229368094760;
+const COIN_CHANNEL: u64 = 813898229368094760;
 
 pub struct Handler {
     pub sender: Sender<Request>,
@@ -140,22 +141,29 @@ async fn coin_creation_check(
     ctx: Context,
 ) -> Result<()> {
     let mut interval = time::interval(period);
+    let mut start_time = time::Instant::now();
+    let mut coin_timer = time::Duration::from_secs(random_between(1, 600) as u64);
+
     loop {
         interval.tick().await;
-        // runs every second
-        if let Some(coin_message) =
-            Handler::send_command_isolated(&sender, Command::CreateCoin).await
-        {
-            let message = Into::<ChannelId>::into(COIN_CHANNEL)
-                .send_message(&ctx.http, CreateMessage::new().content(coin_message))
-                .await?;
-            // how do i get this message out there?
-            // pass it through
-            Handler::send_command_isolated(
-                &sender,
-                Command::CoinCreateNotification(message, ctx.http.clone()),
-            )
-            .await;
+        if (time::Instant::now() - start_time) > coin_timer {
+            // runs every second
+            if let Some(coin_message) =
+                Handler::send_command_isolated(&sender, Command::CreateCoin).await
+            {
+                let message = Into::<ChannelId>::into(COIN_CHANNEL)
+                    .send_message(&ctx.http, CreateMessage::new().content(coin_message))
+                    .await?;
+                // how do i get this message out there?
+                // pass it through
+                Handler::send_command_isolated(
+                    &sender,
+                    Command::CoinCreateNotification(message, ctx.http.clone()),
+                )
+                .await;
+            }
+            start_time = time::Instant::now();
+            coin_timer = time::Duration::from_secs(random_between(1, 600) as u64);
         }
     }
 }
@@ -169,9 +177,7 @@ impl Handler {
             })
             .await
         {
-            return Some(format!(
-                "There was an error communicating with the server: {e:?}"
-            ));
+            panic!("CoinServer error: {e:?}");
         };
         if let Some(message) = rx.recv().await {
             return message;
