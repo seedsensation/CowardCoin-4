@@ -162,7 +162,7 @@ async fn coin_creation_check(
                 .await;
             }
             start_time = time::Instant::now();
-            coin_timer = time::Duration::from_mins(random_between(5, 600) as u64);
+            coin_timer = time::Duration::from_mins(random_between(5, 60) as u64);
         }
     }
 }
