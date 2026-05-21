@@ -41,7 +41,6 @@ impl EventHandler for Handler {
             if let Some(message) = match second_word {
                 // get coin
                 Some(&"get") | Some(&"coin") | None => {
-                    let _ = ctx.http.broadcast_typing(msg.channel_id).await;
                     self.send_command(Command::GetCoin(user_object)).await
                 }
                 // coin count
@@ -163,7 +162,7 @@ async fn coin_creation_check(
                 .await;
             }
             start_time = time::Instant::now();
-            coin_timer = time::Duration::from_secs(random_between(1, 600) as u64);
+            coin_timer = time::Duration::from_mins(random_between(5, 600) as u64);
         }
     }
 }

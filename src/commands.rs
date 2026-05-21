@@ -166,7 +166,7 @@ impl CoinCommands for Server {
                 );
                 let bold = if this_user.id == user.id { "**" } else { "" };
                 format!(
-                    "{}. {}{}{} - {} coins\n",
+                    "{}. {}{}{} - {} coin{}\n",
                     n + 1,
                     bold,
                     this_user
@@ -174,7 +174,8 @@ impl CoinCommands for Server {
                         .clone()
                         .unwrap_or(this_user.display_name.clone()),
                     bold,
-                    this_user.coins
+                    this_user.coins,
+                    s_if(this_user.coins)
                 )
             })
             .collect::<Vec<String>>()

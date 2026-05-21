@@ -83,7 +83,11 @@ impl Games for Server {
 
         if amount <= user.max_coins_for_trick() {
             // generate coin trick message
-            let points = random_between(1, 100);
+            let points = if amount == 0 {
+                0
+            } else {
+                random_between(1, 100)
+            };
             user.style_points += points;
             let trick_state: TrickState = points.into();
             let thrown_item = *random_from::<&str>(&vec![
@@ -127,7 +131,7 @@ impl Games for Server {
             // but have those strings also be able to have substitutions?
             // i think the key is to have it be Strings rather than &str
             format!(
-                "You {}, and {}.\n{}\n{}You gained {points} StylePoints™.",
+                "You {}, and {}\n{}\n{}You gained {points} StylePoints™.",
                 choose_message![
                     "launch yourself into the air gracefully",
                     format!(
@@ -309,7 +313,8 @@ impl Games for Server {
                     TrickState::CRIT => {
                         user.coins += amount;
                         format!(
-                            "You gain {amount} coins!!\nYou now have {} coins.\n",
+                            "You gain {amount} coin{}!!\nYou now have {} coins.\n",
+                            s_if(amount),
                             user.coins
                         )
                     }
@@ -335,6 +340,7 @@ Welcome to the **COIN ARENA**!
 {} {} - Lv. {} - {} Coin{}
 [{}] - {}/{}
 Give {} more coin{} to reach the next level.
+To train, use `coin arena train [number]`.
 
 Your current strength allows you to perform a **Coin Trick** worth {} coin{}.
 	",
