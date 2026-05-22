@@ -1,5 +1,6 @@
 use rand::Rng;
 use rand::seq::SliceRandom;
+use std::time::SystemTime;
 
 use crate::choose_message;
 use crate::communication::BotUser;
@@ -48,6 +49,8 @@ impl Games for Server {
                         if amount > user.coins {
                             return "You can't afford to train _that_ hard in the arena."
                                 .to_string();
+                        } else if amount < 0 {
+                            return "Nice try...".to_string();
                         } else {
                             user.coins -= amount;
                             let response = user.add_xp_with_response(amount);
@@ -55,7 +58,8 @@ impl Games for Server {
                                 return "Error saving to file.".to_string();
                             }
                             return format!(
-                                "You pay {amount} CowardCoins to {}. You gain {amount} XP.{}",
+                                "You pay {amount} CowardCoin{} to {}. You gain {amount} XP.{}",
+                                s_if(amount),
                                 choose_message![
                                     "the altar of progress",
                                     "the shrine of Capitalism",
@@ -81,7 +85,49 @@ impl Games for Server {
         // figure out whether a trick is legal
         let user = self.get_mut_user_from_id(&bot_user);
 
-        if amount <= user.max_coins_for_trick() {
+        if user.coins == 0 {
+            return "You need to have at least 1 coin to do a trick.".to_string();
+        } else if user.level >= (required_level_for_trick(amount, user.coins) - 1) {
+            if SystemTime::now()
+                .duration_since(user.time_of_last_trick)
+                .unwrap()
+                < crate::constants::TIME_BETWEEN_TRICKS
+            {
+                let full_time = (crate::constants::TIME_BETWEEN_TRICKS
+                    - SystemTime::now()
+                        .duration_since(user.time_of_last_trick)
+                        .unwrap())
+                .as_secs() as i64;
+
+                let seconds = full_time % 60;
+                let minutes = (full_time / 60) % 60;
+                let hours = full_time / 60 / 60;
+                return format!(
+                    "You're too weak after your last trick! Please try again in {}.",
+                    format!(
+                        "{}{}{}",
+                        if hours > 0 {
+                            format!("{hours} hour{}, ", s_if(hours))
+                        } else {
+                            format!("")
+                        },
+                        if minutes > 0 {
+                            format!("{minutes} minute{}, ", s_if(minutes))
+                        } else {
+                            format!("")
+                        },
+                        format!(
+                            "{}{seconds} second{}",
+                            if (hours > 0 || minutes > 0) {
+                                "and "
+                            } else {
+                                ""
+                            },
+                            s_if(seconds)
+                        )
+                    )
+                );
+            }
             // generate coin trick message
             let points = if amount == 0 {
                 0
@@ -89,6 +135,7 @@ impl Games for Server {
                 random_between(1, 100)
             };
             user.style_points += points;
+            user.time_of_last_trick = SystemTime::now();
             let trick_state: TrickState = points.into();
             let thrown_item = *random_from::<&str>(&vec![
                 "Christian baby",
@@ -306,7 +353,8 @@ impl Games for Server {
                     TrickState::FAIL => {
                         user.coins -= amount;
                         format!(
-                            "You lose {amount} coins...\nYou now have {} coins.\n",
+                            "You lose {amount} coin{}...\nYou now have {} coins.\n",
+                            s_if(amount),
                             user.coins
                         )
                     }

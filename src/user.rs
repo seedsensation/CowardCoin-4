@@ -1,4 +1,9 @@
 use serde::{Deserialize, Serialize};
+use std::time::SystemTime;
+
+fn default_timestamp() -> SystemTime {
+    SystemTime::UNIX_EPOCH
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Ord, Eq)]
 pub struct CoinUser {
@@ -21,6 +26,9 @@ pub struct CoinUser {
 
     #[serde(default)]
     pub level: i64,
+
+    #[serde(default = "default_timestamp")]
+    pub time_of_last_trick: SystemTime,
 }
 
 impl CoinUser {
@@ -33,6 +41,7 @@ impl CoinUser {
             style_points: 0,
             xp: 0,
             level: 1,
+            time_of_last_trick: SystemTime::UNIX_EPOCH,
         }
     }
     pub fn xp_cap(&self) -> i64 {

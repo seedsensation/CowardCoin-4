@@ -13,6 +13,7 @@ mod user;
 use dotenv::dotenv;
 use serenity::prelude::*;
 use std::env;
+use std::time::Duration;
 use tokio::{
     sync::mpsc::{Receiver, Sender, channel},
     task,
@@ -51,3 +52,8 @@ async fn main() {
 // to make coins appear, make a new task
 // that checks the time. if it's been long enough,
 // send a CreateCoin command to the server.
+
+pub mod constants {
+    use crate::Duration;
+    pub const TIME_BETWEEN_TRICKS: Duration = Duration::from_hours(4);
+}
