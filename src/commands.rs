@@ -137,11 +137,19 @@ impl CoinCommands for Server {
                 format!(
                     "The stock market's still shifting... You can't make any more investments for another {}.",
                     crate::helpers::seconds_to_string(
-                        (crate::environment::INVESTMENT_TIMER
-                            - SystemTime::now()
-                                .duration_since(sender_local.time_of_last_investment)
-                                .unwrap())
-                        .as_secs() as i64
+                        if SystemTime::now()
+                            .duration_since(sender_local.time_of_last_investment)
+                            .unwrap()
+                            < crate::environment::INVESTMENT_TIMER
+                        {
+                            (crate::environment::INVESTMENT_TIMER
+                                - SystemTime::now()
+                                    .duration_since(sender_local.time_of_last_investment)
+                                    .unwrap())
+                            .as_secs() as i64
+                        } else {
+                            0i64
+                        }
                     )
                 )
             } else {
@@ -170,11 +178,19 @@ impl CoinCommands for Server {
                         recipient_local.coins,
                         s_if(recipient_local.coins),
                         crate::helpers::seconds_to_string(
-                            (crate::environment::MARKET_CHANGE_TIMER
-                                - SystemTime::now()
-                                    .duration_since(self.time_of_last_interest)
-                                    .unwrap())
-                            .as_secs() as i64
+                            if SystemTime::now()
+                                .duration_since(self.time_of_last_interest)
+                                .unwrap()
+                                < crate::environment::MARKET_CHANGE_TIMER
+                            {
+                                (crate::environment::MARKET_CHANGE_TIMER
+                                    - SystemTime::now()
+                                        .duration_since(self.time_of_last_interest)
+                                        .unwrap())
+                                .as_secs() as i64
+                            } else {
+                                0i64
+                            }
                         )
                     )
                 }
@@ -278,8 +294,6 @@ impl CoinCommands for Server {
                 }
                 Err(_) => eprintln!("Failed to find self in server log"),
             };
-        } else {
-            eprintln!("No");
         }
     }
 }

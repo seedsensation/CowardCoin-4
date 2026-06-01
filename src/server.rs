@@ -47,7 +47,6 @@ where
             }
             Arena(bot_user, items) => Some(self.arena(bot_user, items)),
             UpdateCoins => {
-                eprintln!("Updating");
                 self.update_coins();
                 None
             }
