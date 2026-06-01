@@ -26,6 +26,9 @@ pub struct CoinUser {
 
     #[serde(default = "default_timestamp")]
     pub time_of_last_trick: SystemTime,
+
+    #[serde(default = "default_timestamp")]
+    pub time_of_last_investment: SystemTime,
 }
 
 impl CoinUser {
@@ -39,6 +42,7 @@ impl CoinUser {
             xp: 0,
             level: 1,
             time_of_last_trick: SystemTime::UNIX_EPOCH,
+            time_of_last_investment: SystemTime::UNIX_EPOCH,
         }
     }
     pub fn xp_cap(&self) -> i64 {

@@ -16,6 +16,7 @@ pub enum Command {
     CreateCoin,
     CoinCreateNotification(Message, Arc<Http>),
     Arena(BotUser, Vec<String>),
+    UpdateCoins,
 }
 
 #[derive(Debug)]

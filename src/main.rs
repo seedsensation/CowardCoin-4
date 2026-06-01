@@ -51,8 +51,10 @@ async fn main() {
 pub mod environment {
     use crate::Duration;
     pub const TIME_BETWEEN_TRICKS: Duration = Duration::from_hours(4);
-    pub const TIME_FOR_INTEREST: Duration = Duration::from_hours(4);
-    pub const BOT_ID: u64 = 813814751192809543;
+    pub const MARKET_CHANGE_TIMER: Duration = Duration::from_secs(5);
+    pub const INVESTMENT_TIMER: Duration = Duration::from_secs(5);
+    //pub const BOT_ID: u64 = 813814751192809543;
+    pub const BOT_ID: u64 = 1023717268624003113;
 
     pub const COIN_TIME: u64 = 600;
 

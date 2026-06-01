@@ -96,30 +96,9 @@ impl Games for Server {
                         .duration_since(user.time_of_last_trick)
                         .unwrap())
                 .as_secs() as i64;
-
-                let seconds = full_time % 60;
-                let minutes = (full_time / 60) % 60;
-                let hours = full_time / 60 / 60;
                 return format!(
-                    "You're too weak after your last trick! Please try again in {}.",
-                    format!(
-                        "{}{}{}",
-                        if hours > 0 {
-                            format!("{hours} hour{}, ", s_if(hours))
-                        } else {
-                            format!("")
-                        },
-                        if minutes > 0 {
-                            format!("{minutes} minute{}, ", s_if(minutes))
-                        } else {
-                            format!("")
-                        },
-                        format!(
-                            "{}{seconds} second{}",
-                            if hours > 0 || minutes > 0 { "and " } else { "" },
-                            s_if(seconds)
-                        )
-                    )
+                    "You're too weak after your last trick! Try again in {}.",
+                    crate::helpers::seconds_to_string(full_time)
                 );
             }
             // generate coin trick message

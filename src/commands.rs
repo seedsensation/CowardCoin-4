@@ -19,6 +19,7 @@ pub trait CoinCommands {
     fn create_coin(&mut self) -> Option<String>;
     fn coin_leaderboard(&mut self, id: BotUser) -> String;
     fn set_coin_message(&mut self, message: Message, http: Arc<Http>) -> impl Future<Output = ()>;
+    fn update_coins(&mut self);
 }
 
 impl CoinCommands for Server {
@@ -128,38 +129,55 @@ impl CoinCommands for Server {
         recipient_local.coins += amount;
 
         let message = if recipient_local.id == environment::BOT_ID {
-            let chance = crate::helpers::random_between(0, 100);
-            if chance > 90 {
-                let diff = recipient_local.coins / 2;
-                sender_local.coins += diff;
-                recipient_local.coins -= diff;
+            if SystemTime::now()
+                .duration_since(sender_local.time_of_last_investment)
+                .unwrap()
+                < crate::environment::INVESTMENT_TIMER
+            {
                 format!(
-                    "Congratulations! Your investments have paid off! You have received {} coin{} in dividends.\nYou now have {} coin{}.\n{} coin{} remain in the CowardCoin Bank.",
-                    diff,
-                    s_if(diff),
-                    sender_local.coins,
-                    s_if(sender_local.coins),
-                    recipient_local.coins,
-                    s_if(recipient_local.coins)
+                    "The stock market's still shifting... You can't make any more investments for another {}.",
+                    crate::helpers::seconds_to_string(
+                        (crate::environment::INVESTMENT_TIMER
+                            - SystemTime::now()
+                                .duration_since(sender_local.time_of_last_investment)
+                                .unwrap())
+                        .as_secs() as i64
+                    )
                 )
             } else {
-                if SystemTime::now()
-                    .duration_since(self.time_of_last_interest)
-                    .unwrap()
-                    > crate::environment::TIME_FOR_INTEREST
-                {
-                    recipient_local.coins = (recipient_local.coins as f64 * 1.1) as i64;
-                    self.time_of_last_interest = SystemTime::now();
+                sender_local.time_of_last_investment = SystemTime::now();
+                let chance = crate::helpers::random_between(0, 100);
+                if chance > 90 {
+                    let diff = recipient_local.coins / 2;
+                    sender_local.coins += diff;
+                    recipient_local.coins -= diff;
+                    format!(
+                        "Congratulations! Your investments have paid off! You have received {} coin{} in dividends.\nYou now have {} coin{}.\n{} coin{} remain in the CowardCoin Bank.",
+                        diff,
+                        s_if(diff),
+                        sender_local.coins,
+                        s_if(sender_local.coins),
+                        recipient_local.coins,
+                        s_if(recipient_local.coins)
+                    )
+                } else {
+                    format!(
+                        "You have invested {} coin{} in the CowardCoin Bank!\nYou now have {} coin{}.\nThere are now {} coin{} in the CowardCoin Bank.\nThe market will shift in {}.",
+                        amount,
+                        s_if(amount),
+                        sender_local.coins,
+                        s_if(sender_local.coins),
+                        recipient_local.coins,
+                        s_if(recipient_local.coins),
+                        crate::helpers::seconds_to_string(
+                            (crate::environment::MARKET_CHANGE_TIMER
+                                - SystemTime::now()
+                                    .duration_since(self.time_of_last_interest)
+                                    .unwrap())
+                            .as_secs() as i64
+                        )
+                    )
                 }
-                format!(
-                    "You have invested {} coin{} in the CowardCoin Bank!\nYou now have {} coin{}.\nThere are now {} coin{} in the CowardCoin Bank.",
-                    amount,
-                    s_if(amount),
-                    sender_local.coins,
-                    s_if(sender_local.coins),
-                    recipient_local.coins,
-                    s_if(recipient_local.coins),
-                )
             }
         } else {
             let recipient_nickname = recipient_local
@@ -237,5 +255,31 @@ impl CoinCommands for Server {
             msg: message,
             http: http,
         });
+    }
+
+    fn update_coins(&mut self) {
+        if SystemTime::now()
+            .duration_since(self.time_of_last_interest)
+            .unwrap()
+            > crate::environment::INVESTMENT_TIMER
+        {
+            self.time_of_last_interest = SystemTime::now();
+            match self
+                .users
+                .binary_search_by_key(&crate::environment::BOT_ID, |x| x.id)
+            {
+                Ok(v) => {
+                    let user = self.users.get_mut(v).unwrap();
+                    let coins_change = (user.coins as f64
+                        * (crate::helpers::random_between(850, 1150) as f64 / 1000f64))
+                        as i64;
+                    eprintln!("Updating investments by {}", coins_change - user.coins);
+                    user.coins = coins_change;
+                }
+                Err(_) => eprintln!("Failed to find self in server log"),
+            };
+        } else {
+            eprintln!("No");
+        }
     }
 }

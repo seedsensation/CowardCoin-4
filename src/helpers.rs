@@ -78,6 +78,30 @@ pub fn default_timestamp() -> SystemTime {
     SystemTime::UNIX_EPOCH
 }
 
+pub fn seconds_to_string(full_time: i64) -> String {
+    let seconds = full_time % 60;
+    let minutes = (full_time / 60) % 60;
+    let hours = full_time / 60 / 60;
+    format!(
+        "{}{}{}",
+        if hours > 0 {
+            format!("{hours} hour{}, ", s_if(hours))
+        } else {
+            format!("")
+        },
+        if minutes > 0 {
+            format!("{minutes} minute{}, ", s_if(minutes))
+        } else {
+            format!("")
+        },
+        format!(
+            "{}{seconds} second{}",
+            if hours > 0 || minutes > 0 { "and " } else { "" },
+            s_if(seconds)
+        )
+    )
+}
+
 #[derive(Clone)]
 pub enum MessageType {
     S(&'static str),

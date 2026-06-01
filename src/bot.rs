@@ -144,6 +144,7 @@ async fn coin_creation_check(
 
     loop {
         interval.tick().await;
+        Handler::send_command_isolated(&sender, Command::UpdateCoins).await;
         if (time::Instant::now() - start_time) > coin_timer {
             // runs every second
             if let Some(coin_message) =
