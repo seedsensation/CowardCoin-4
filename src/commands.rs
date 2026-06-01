@@ -6,7 +6,7 @@ use serenity::all::Message;
 
 use crate::Coin;
 use crate::communication::{BotUser, CoinMessage};
-use crate::constants;
+use crate::environment;
 use crate::games::*;
 use crate::helpers::s_if;
 use crate::server::Server;
@@ -124,7 +124,7 @@ impl CoinCommands for Server {
         sender_local.coins -= amount;
         recipient_local.coins += amount;
 
-        let message = if recipient_local.id == constants::BOT_ID {
+        let message = if recipient_local.id == environment::BOT_ID {
             let chance = crate::helpers::random_between(0, 100);
             if chance > 90 {
                 let diff = recipient_local.coins / 2;
@@ -143,7 +143,7 @@ impl CoinCommands for Server {
                 if SystemTime::now()
                     .duration_since(self.time_of_last_interest)
                     .unwrap()
-                    > crate::constants::TIME_FOR_INTEREST
+                    > crate::environment::TIME_FOR_INTEREST
                 {
                     recipient_local.coins = (recipient_local.coins as f64 * 1.1) as i64;
                     self.time_of_last_interest = SystemTime::now();

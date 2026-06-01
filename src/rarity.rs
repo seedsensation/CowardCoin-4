@@ -78,11 +78,6 @@ impl Rarity {
         10i64.pow(self.id() as u32)
     }
 
-    /// Get the highest ID
-    fn max_id() -> i64 {
-        Rarity::max_rarity().id()
-    }
-
     /// Get the highest value rarity
     pub fn max_rarity() -> Rarity {
         Rarity::GNOME

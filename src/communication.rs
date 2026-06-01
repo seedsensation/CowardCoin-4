@@ -1,10 +1,10 @@
-use std::{alloc::GlobalAlloc, sync::Arc};
+use std::sync::Arc;
 
 use serenity::{
     Result,
-    all::{CacheHttp, Guild, GuildId, Http, Message, User},
+    all::{CacheHttp, GuildId, Http, Message, User},
 };
-use tokio::sync::mpsc::{Receiver, Sender};
+use tokio::sync::mpsc::Sender;
 
 #[derive(Debug)]
 pub enum Command {

@@ -1,5 +1,3 @@
-use rand::Rng;
-use rand::seq::SliceRandom;
 use std::time::SystemTime;
 
 use crate::choose_message;
@@ -91,9 +89,9 @@ impl Games for Server {
             if SystemTime::now()
                 .duration_since(user.time_of_last_trick)
                 .unwrap()
-                < crate::constants::TIME_BETWEEN_TRICKS
+                < crate::environment::TIME_BETWEEN_TRICKS
             {
-                let full_time = (crate::constants::TIME_BETWEEN_TRICKS
+                let full_time = (crate::environment::TIME_BETWEEN_TRICKS
                     - SystemTime::now()
                         .duration_since(user.time_of_last_trick)
                         .unwrap())
@@ -118,11 +116,7 @@ impl Games for Server {
                         },
                         format!(
                             "{}{seconds} second{}",
-                            if (hours > 0 || minutes > 0) {
-                                "and "
-                            } else {
-                                ""
-                            },
+                            if hours > 0 || minutes > 0 { "and " } else { "" },
                             s_if(seconds)
                         )
                     )

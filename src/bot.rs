@@ -1,8 +1,7 @@
 use crate::communication::*;
 use crate::helpers::random_between;
 
-use serenity::all::{ChannelId, CreateMessage, GuildId, MessageBuilder, Ready, User};
-use serenity::futures::future::join_all;
+use serenity::all::{ChannelId, CreateMessage, Ready};
 use serenity::model::channel::Message;
 use serenity::prelude::*;
 use serenity::{Result, async_trait};
@@ -15,7 +14,6 @@ use tokio::time::{self, Duration};
 // debug
 //const COIN_CHANNEL: u64 = 1368929242229903360;
 // active
-const COIN_CHANNEL: u64 = 813898229368094760;
 
 pub struct Handler {
     pub sender: Sender<Request>,
@@ -141,7 +139,8 @@ async fn coin_creation_check(
 ) -> Result<()> {
     let mut interval = time::interval(period);
     let mut start_time = time::Instant::now();
-    let mut coin_timer = time::Duration::from_secs(random_between(1, 600) as u64);
+    let mut coin_timer =
+        time::Duration::from_secs(random_between(1, crate::environment::COIN_TIME as i64) as u64);
 
     loop {
         interval.tick().await;
@@ -150,7 +149,7 @@ async fn coin_creation_check(
             if let Some(coin_message) =
                 Handler::send_command_isolated(&sender, Command::CreateCoin).await
             {
-                let message = Into::<ChannelId>::into(COIN_CHANNEL)
+                let message = Into::<ChannelId>::into(crate::environment::coin_channel())
                     .send_message(&ctx.http, CreateMessage::new().content(coin_message))
                     .await?;
                 // how do i get this message out there?
@@ -162,7 +161,10 @@ async fn coin_creation_check(
                 .await;
             }
             start_time = time::Instant::now();
-            coin_timer = time::Duration::from_mins(random_between(5, 60) as u64);
+            coin_timer = time::Duration::from_secs(random_between(
+                1,
+                crate::environment::COIN_TIME as i64,
+            ) as u64);
         }
     }
 }
@@ -187,16 +189,4 @@ impl Handler {
     async fn send_command(&self, command: Command) -> Option<String> {
         Self::send_command_isolated(&self.sender, command).await
     }
-}
-
-async fn get_usernames<T>(users: Vec<User>, http: T, guild_id: Option<GuildId>) -> Vec<BotUser>
-where
-    T: CacheHttp,
-{
-    join_all(
-        users
-            .iter()
-            .map(|x| async { BotUser::from_user(x, &http, guild_id).await }),
-    )
-    .await
 }
