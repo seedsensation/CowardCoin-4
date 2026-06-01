@@ -1,9 +1,6 @@
+use crate::helpers::default_timestamp;
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
-
-fn default_timestamp() -> SystemTime {
-    SystemTime::UNIX_EPOCH
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Ord, Eq)]
 pub struct CoinUser {

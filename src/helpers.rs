@@ -1,4 +1,5 @@
 use std::ops::Range;
+use std::time::SystemTime;
 
 use rand::prelude::*;
 
@@ -39,9 +40,46 @@ macro_rules! choose_message {
     };
 }
 
+/// Get multiple mutable users from their ID.
+///
+/// SAFETY: Will always check whether the index is valid before dereferencing.
+/// Be careful, though - it is assumed that a recipient exists.
 #[macro_export]
 macro_rules! get_mut_users_from_ids {
-    ($server:ident, $($user:ident, $dest:ident),+) => {};
+    ($($user:ident),+ in $server:ident) => {
+	unsafe {
+	    ($({
+		match $server.users.binary_search_by_key(&$user.id, |x| x.id) {
+		    Ok(v) => Some(&mut *($server.users.as_mut_ptr().add(v))),
+		    Err(_) => None
+		}
+	    }),+)
+	}
+    };
+}
+
+#[macro_export]
+macro_rules! get_index_from_id {
+    ($user:ident in $server:ident) => {
+        match $server.users.binary_search_by_key(&$user.id, |x| x.id) {
+            Ok(v) => v,
+            Err(_) => {
+                $server.users.push(CoinUser::new(
+                    $user.id,
+                    $user.nickname.clone(),
+                    $user.display_name.clone(),
+                ));
+                $server
+                    .users
+                    .binary_search_by_key(&$user.id, |x| x.id)
+                    .unwrap()
+            }
+        }
+    };
+}
+
+pub fn default_timestamp() -> SystemTime {
+    SystemTime::UNIX_EPOCH
 }
 
 #[derive(Clone)]

@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::SystemTime;
 
 use serenity::all::Http;
 use serenity::all::Message;
@@ -9,6 +10,7 @@ use crate::constants;
 use crate::games::*;
 use crate::helpers::s_if;
 use crate::server::Server;
+use crate::user::CoinUser;
 
 pub trait CoinCommands {
     fn get_coin(&mut self, user: BotUser) -> impl Future<Output = Option<String>>;
@@ -101,57 +103,85 @@ impl CoinCommands for Server {
             return output;
         }
 
-        if recipient.id == constants::BOT_ID {
-            let (sender_local, recipient_local) = self.get_mut_users_from_ids(&sender, &recipient);
-        }
+        let sender_index = crate::get_index_from_id!(sender in self);
+        let recipient_index = crate::get_index_from_id!(recipient in self);
 
-        // borrow sender mutably
-        let sender_local = self.get_mut_user_from_id(&sender);
+        assert!(
+            sender_index != recipient_index,
+            "Cannot borrow the same element twice."
+        );
+
+        // baby's first unsafe block
+        // borrow both sender and recipient from self.users
+        let ptr = self.users.as_mut_ptr();
+        let (sender_local, recipient_local) =
+            unsafe { (&mut *ptr.add(sender_index), &mut *ptr.add(recipient_index)) };
+
         if sender_local.coins < amount {
             return "You don't have enough coins!".into();
         }
 
         sender_local.coins -= amount;
-        let sender_coins = sender_local.coins.clone();
-        // sender_local is never referenced again, so it is dropped
-
-        // borrow recipient mutably
-        let recipient_local = self.get_mut_user_from_id(&recipient);
         recipient_local.coins += amount;
-        let recipient_nickname = recipient_local
-            .nickname
-            .as_ref()
-            .unwrap_or(&recipient.display_name)
-            .clone();
-        let recipient_coins = recipient_local.coins.clone();
-        // recipient_local is never referenced again, so it is dropped
 
-        if let Err(_) = self.save() {
-            return "There was an error saving to file.".to_string();
-        } else {
-            if recipient.id == constants::BOT_ID {
+        let message = if recipient_local.id == constants::BOT_ID {
+            let chance = crate::helpers::random_between(0, 100);
+            if chance > 90 {
+                let diff = recipient_local.coins / 2;
+                sender_local.coins += diff;
+                recipient_local.coins -= diff;
+                format!(
+                    "Congratulations! Your investments have paid off! You have received {} coin{} in dividends.\nYou now have {} coin{}.\n{} coin{} remain in the CowardCoin Bank.",
+                    diff,
+                    s_if(diff),
+                    sender_local.coins,
+                    s_if(sender_local.coins),
+                    recipient_local.coins,
+                    s_if(recipient_local.coins)
+                )
+            } else {
+                if SystemTime::now()
+                    .duration_since(self.time_of_last_interest)
+                    .unwrap()
+                    > crate::constants::TIME_FOR_INTEREST
+                {
+                    recipient_local.coins = (recipient_local.coins as f64 * 1.1) as i64;
+                    self.time_of_last_interest = SystemTime::now();
+                }
                 format!(
                     "You have invested {} coin{} in the CowardCoin Bank!\nYou now have {} coin{}.\nThere are now {} coin{} in the CowardCoin Bank.",
                     amount,
                     s_if(amount),
-                    sender_coins,
-                    s_if(sender_coins),
-                    recipient_coins,
-                    s_if(recipient_coins),
-                )
-            } else {
-                format!(
-                    "You gave {} coin{} to {}!\nYou now have {} coin{}.\n{} now has {} coin{}.",
-                    amount,
-                    s_if(amount),
-                    recipient_nickname,
-                    sender_coins,
-                    s_if(sender_coins),
-                    recipient_nickname,
-                    recipient_coins,
-                    s_if(recipient_coins)
+                    sender_local.coins,
+                    s_if(sender_local.coins),
+                    recipient_local.coins,
+                    s_if(recipient_local.coins),
                 )
             }
+        } else {
+            let recipient_nickname = recipient_local
+                .nickname
+                .as_ref()
+                .unwrap_or(&recipient.display_name)
+                .clone();
+
+            format!(
+                "You gave {} coin{} to {}!\nYou now have {} coin{}.\n{} now has {} coin{}.",
+                amount,
+                s_if(amount),
+                recipient_nickname,
+                sender_local.coins,
+                s_if(sender_local.coins),
+                recipient_nickname,
+                recipient_local.coins,
+                s_if(recipient_local.coins)
+            )
+        };
+
+        if let Err(_) = self.save() {
+            "There was an error saving to file.".to_string()
+        } else {
+            message
         }
     }
 

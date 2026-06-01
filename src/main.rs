@@ -56,5 +56,6 @@ async fn main() {
 pub mod constants {
     use crate::Duration;
     pub const TIME_BETWEEN_TRICKS: Duration = Duration::from_hours(4);
+    pub const TIME_FOR_INTEREST: Duration = Duration::from_hours(4);
     pub const BOT_ID: u64 = 813814751192809543;
 }

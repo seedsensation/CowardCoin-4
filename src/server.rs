@@ -1,15 +1,13 @@
 use std::fs;
 
+use std::time::SystemTime;
 use tokio::sync::mpsc::Receiver;
 
 use crate::Coin;
-use crate::Rarity;
 use crate::commands::CoinCommands;
-use crate::communication::BotUser;
-use crate::communication::{CoinMessage, Command, Request};
+use crate::communication::{BotUser, CoinMessage, Command, Request};
 use crate::games::Games;
-use crate::helpers::random_between;
-use crate::helpers::s_if;
+use crate::helpers::default_timestamp;
 use crate::user::CoinUser;
 
 use serde::{Deserialize, Serialize};
@@ -22,6 +20,8 @@ pub struct Server {
     pub coin: Coin,
     #[serde(skip)]
     pub coin_message: Option<CoinMessage>,
+    #[serde(default = "default_timestamp")]
+    pub time_of_last_interest: SystemTime,
 }
 
 pub trait ExecuteCommands: CoinCommands {
@@ -64,6 +64,7 @@ impl Server {
             users: vec![],
             coin: Coin::none(),
             coin_message: None,
+            time_of_last_interest: default_timestamp(),
         })
     }
 
@@ -122,51 +123,17 @@ impl Server {
         }
     }
 
-    pub fn get_mut_users_from_ids(
-        &mut self,
-        sender: &BotUser,
-        recipient: &BotUser,
-    ) -> (&mut CoinUser, &mut CoinUser) {
-        let sender_index = self
-            .users
-            .binary_search_by_key(&sender.id, |x| x.id)
-            .unwrap();
-        let recipient_index = self
-            .users
-            .binary_search_by_key(&recipient.id, |x| x.id)
-            .unwrap();
-
-        // baby's first unsafe block
-        unsafe {
-            let ptr = self.users.as_mut_ptr();
-            (&mut *ptr.add(sender_index), &mut *ptr.add(recipient_index))
-        }
-    }
-
-    //pub fn get_user_from_id(&mut self, user: &BotUser) -> Option<&mut CoinUser> {
-    //    match self.users.binary_search_by_key(&user.id, |x| x.id) {
-    //        Ok(v) => Some(unsafe { &mut *(self.users.as_mut_ptr().add(v)) }),
-    //        Err(_) => None,
-    //    }
-    //}
-
     pub fn get_mut_user_from_id(&mut self, user: &BotUser) -> &mut CoinUser {
-        self.users.sort();
-        if let Ok(v) = self.users.binary_search_by_key(&user.id, |x| x.id) {
-            let new_user = self.users.get_mut(v).unwrap();
-            new_user.display_name = user.display_name.clone();
-            if user.nickname != new_user.nickname && user.nickname.is_some() {
-                new_user.nickname = user.nickname.clone();
+        match self.users.binary_search_by_key(&user.id, |x| x.id) {
+            Ok(v) => self.users.get_mut(v).unwrap(),
+            Err(_) => {
+                self.users.push(CoinUser::new(
+                    user.id,
+                    user.nickname.clone(),
+                    user.display_name.clone(),
+                ));
+                self.users.last_mut().unwrap()
             }
-            new_user
-        } else {
-            self.users.push(CoinUser::new(
-                user.id,
-                user.nickname.clone(),
-                user.display_name.clone(),
-            ));
-            let output = self.users.last_mut().unwrap();
-            output
         }
     }
 
