@@ -5,10 +5,10 @@ use serenity::all::Message;
 
 use crate::Coin;
 use crate::communication::{BotUser, CoinMessage};
+use crate::constants;
 use crate::games::*;
 use crate::helpers::s_if;
 use crate::server::Server;
-use crate::user::CoinUser;
 
 pub trait CoinCommands {
     fn get_coin(&mut self, user: BotUser) -> impl Future<Output = Option<String>>;
@@ -101,11 +101,16 @@ impl CoinCommands for Server {
             return output;
         }
 
+        if recipient.id == constants::BOT_ID {
+            let (sender_local, recipient_local) = self.get_mut_users_from_ids(&sender, &recipient);
+        }
+
         // borrow sender mutably
         let sender_local = self.get_mut_user_from_id(&sender);
         if sender_local.coins < amount {
             return "You don't have enough coins!".into();
         }
+
         sender_local.coins -= amount;
         let sender_coins = sender_local.coins.clone();
         // sender_local is never referenced again, so it is dropped
@@ -123,19 +128,31 @@ impl CoinCommands for Server {
 
         if let Err(_) = self.save() {
             return "There was an error saving to file.".to_string();
+        } else {
+            if recipient.id == constants::BOT_ID {
+                format!(
+                    "You have invested {} coin{} in the CowardCoin Bank!\nYou now have {} coin{}.\nThere are now {} coin{} in the CowardCoin Bank.",
+                    amount,
+                    s_if(amount),
+                    sender_coins,
+                    s_if(sender_coins),
+                    recipient_coins,
+                    s_if(recipient_coins),
+                )
+            } else {
+                format!(
+                    "You gave {} coin{} to {}!\nYou now have {} coin{}.\n{} now has {} coin{}.",
+                    amount,
+                    s_if(amount),
+                    recipient_nickname,
+                    sender_coins,
+                    s_if(sender_coins),
+                    recipient_nickname,
+                    recipient_coins,
+                    s_if(recipient_coins)
+                )
+            }
         }
-
-        format!(
-            "You gave {} coin{} to {}!\nYou now have {} coin{}.\n{} now has {} coin{}.",
-            amount,
-            s_if(amount),
-            recipient_nickname,
-            sender_coins,
-            s_if(sender_coins),
-            recipient_nickname,
-            recipient_coins,
-            s_if(recipient_coins)
-        )
     }
 
     fn create_coin(&mut self) -> Option<String> {

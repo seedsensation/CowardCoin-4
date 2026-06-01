@@ -39,6 +39,11 @@ macro_rules! choose_message {
     };
 }
 
+#[macro_export]
+macro_rules! get_mut_users_from_ids {
+    ($server:ident, $($user:ident, $dest:ident),+) => {};
+}
+
 #[derive(Clone)]
 pub enum MessageType {
     S(&'static str),

@@ -121,6 +121,35 @@ impl Server {
             self.users.last().unwrap()
         }
     }
+
+    pub fn get_mut_users_from_ids(
+        &mut self,
+        sender: &BotUser,
+        recipient: &BotUser,
+    ) -> (&mut CoinUser, &mut CoinUser) {
+        let sender_index = self
+            .users
+            .binary_search_by_key(&sender.id, |x| x.id)
+            .unwrap();
+        let recipient_index = self
+            .users
+            .binary_search_by_key(&recipient.id, |x| x.id)
+            .unwrap();
+
+        // baby's first unsafe block
+        unsafe {
+            let ptr = self.users.as_mut_ptr();
+            (&mut *ptr.add(sender_index), &mut *ptr.add(recipient_index))
+        }
+    }
+
+    //pub fn get_user_from_id(&mut self, user: &BotUser) -> Option<&mut CoinUser> {
+    //    match self.users.binary_search_by_key(&user.id, |x| x.id) {
+    //        Ok(v) => Some(unsafe { &mut *(self.users.as_mut_ptr().add(v)) }),
+    //        Err(_) => None,
+    //    }
+    //}
+
     pub fn get_mut_user_from_id(&mut self, user: &BotUser) -> &mut CoinUser {
         self.users.sort();
         if let Ok(v) = self.users.binary_search_by_key(&user.id, |x| x.id) {
