@@ -59,7 +59,7 @@ macro_rules! get_mut_users_from_ids {
 
 #[macro_export]
 macro_rules! get_index_from_id {
-    ($user:ident in $server:ident) => {
+    ($user:ident in $server:ident) => {{
         match $server.users.binary_search_by_key(&$user.id, |x| x.id) {
             Ok(v) => v,
             Err(_) => {
@@ -68,13 +68,10 @@ macro_rules! get_index_from_id {
                     $user.nickname.clone(),
                     $user.display_name.clone(),
                 ));
-                $server
-                    .users
-                    .binary_search_by_key(&$user.id, |x| x.id)
-                    .unwrap()
+                ($server.users.len() - 1)
             }
         }
-    };
+    }};
 }
 
 pub fn default_timestamp() -> SystemTime {

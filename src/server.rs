@@ -70,7 +70,7 @@ impl Server {
 
     pub fn save(&mut self) -> Result<()> {
         println!("Saving file...");
-        self.users.sort();
+        self.sort_by_ids();
         serde_json::to_writer_pretty(
             {
                 fs::OpenOptions::new()
@@ -123,7 +123,12 @@ impl Server {
         }
     }
 
+    pub fn sort_by_ids(&mut self) {
+        self.users.sort_by(|x, y| x.id.cmp(&y.id));
+    }
+
     pub fn get_mut_user_from_id(&mut self, user: &BotUser) -> &mut CoinUser {
+        self.sort_by_ids();
         match self.users.binary_search_by_key(&user.id, |x| x.id) {
             Ok(v) => self.users.get_mut(v).unwrap(),
             Err(_) => {

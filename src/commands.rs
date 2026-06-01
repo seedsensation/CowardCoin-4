@@ -103,21 +103,24 @@ impl CoinCommands for Server {
             return output;
         }
 
-        let sender_index = crate::get_index_from_id!(sender in self);
-        let recipient_index = crate::get_index_from_id!(recipient in self);
+        self.sort_by_ids();
+
+        // SAFETY: Do not sort `server.users` while `sender_local` or `recipient_local` are in scope.
+        let ptr = self.users.as_mut_ptr();
+        let sender_local = unsafe { &mut *ptr.add(crate::get_index_from_id!(sender in self)) };
+        let recipient_local =
+            unsafe { &mut *ptr.add(crate::get_index_from_id!(recipient in self)) };
 
         assert!(
-            sender_index != recipient_index,
+            sender_local.id != recipient_local.id,
             "Cannot borrow the same element twice."
         );
 
-        // baby's first unsafe block
-        // borrow both sender and recipient from self.users
-        let ptr = self.users.as_mut_ptr();
-        let (sender_local, recipient_local) =
-            unsafe { (&mut *ptr.add(sender_index), &mut *ptr.add(recipient_index)) };
-
         if sender_local.coins < amount {
+            eprintln!(
+                "has {} coins, wants to give {} coins",
+                sender_local.coins, amount
+            );
             return "You don't have enough coins!".into();
         }
 
