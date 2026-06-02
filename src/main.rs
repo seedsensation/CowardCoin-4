@@ -1,25 +1,34 @@
 extern crate dotenv;
 
 pub mod bot;
+pub mod communication;
+pub mod environment;
+pub mod helpers;
+
+pub mod prelude {
+    pub use crate::coin::Coin;
+    pub use crate::commands::CoinCommands;
+    pub use crate::communication::BotUser;
+    pub use crate::rarity::Rarity;
+    pub use crate::user::CoinUser;
+}
+
 mod coin;
 mod commands;
-pub mod communication;
 mod games;
-pub mod helpers;
 mod rarity;
 mod server;
 mod user;
 
+pub use prelude::*;
+
 use dotenv::dotenv;
 use serenity::prelude::*;
-use std::env;
-use std::time::Duration;
+use std::{env, time::Duration};
 use tokio::{sync::mpsc::channel, task};
 
 use bot::Handler;
 use communication::Request;
-
-pub use prelude::*;
 
 #[tokio::main]
 async fn main() {
@@ -47,30 +56,3 @@ async fn main() {
 // to make coins appear, make a new task
 // that checks the time. if it's been long enough,
 // send a CreateCoin command to the server.
-
-pub mod environment {
-    use crate::Duration;
-    pub const TIME_BETWEEN_TRICKS: Duration = Duration::from_hours(4);
-    pub const MARKET_CHANGE_TIMER: Duration = Duration::from_hours(1);
-    pub const INVESTMENT_TIMER: Duration = Duration::from_mins(10);
-    pub const BOT_ID: u64 = 813814751192809543;
-    //pub const BOT_ID: u64 = 1023717268624003113;
-
-    pub const COIN_TIME: u64 = 600;
-
-    pub fn coin_channel() -> u64 {
-        dotenv::dotenv().ok();
-        str::parse(
-            &std::env::var("COIN_CHANNEL").expect("Expected COIN_CHANNEL in the environment"),
-        )
-        .unwrap()
-    }
-}
-
-pub mod prelude {
-    pub use crate::coin::Coin;
-    pub use crate::commands::CoinCommands;
-    pub use crate::communication::BotUser;
-    pub use crate::rarity::Rarity;
-    pub use crate::user::CoinUser;
-}

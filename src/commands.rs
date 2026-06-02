@@ -277,7 +277,7 @@ impl CoinCommands for Server {
         if SystemTime::now()
             .duration_since(self.time_of_last_interest)
             .unwrap()
-            > crate::environment::INVESTMENT_TIMER
+            > crate::environment::MARKET_CHANGE_TIMER
         {
             self.time_of_last_interest = SystemTime::now();
             match self
