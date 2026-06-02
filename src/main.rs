@@ -1,33 +1,32 @@
 extern crate dotenv;
 
-pub mod bot;
 pub mod communication;
 pub mod environment;
 pub mod helpers;
 
-pub mod prelude {
-    pub use crate::coin::Coin;
-    pub use crate::commands::CoinCommands;
-    pub use crate::communication::BotUser;
-    pub use crate::rarity::Rarity;
-    pub use crate::user::CoinUser;
-}
-
 mod coin;
 mod commands;
+mod discord_bot;
 mod games;
-mod rarity;
 mod server;
 mod user;
 
-pub use prelude::*;
+pub mod prelude {
+    pub use crate::coin::{Coin, Rarity};
+    pub use crate::commands::CoinCommands;
+    pub use crate::communication::{Command, Request};
+    pub use crate::discord_bot::Handler;
+    pub use crate::helpers::*;
+    pub use crate::user::{BotUser, CoinUser};
+}
+
+use crate::prelude::*;
 
 use dotenv::dotenv;
 use serenity::prelude::*;
 use std::{env, time::Duration};
 use tokio::{sync::mpsc::channel, task};
 
-use bot::Handler;
 use communication::Request;
 
 #[tokio::main]

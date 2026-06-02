@@ -1,19 +1,17 @@
-use crate::communication::*;
-use crate::helpers::random_between;
+use crate::coin::coin_creation_check;
+use crate::prelude::*;
 
-use serenity::all::{ChannelId, CreateMessage, Ready};
-use serenity::model::channel::Message;
-use serenity::prelude::*;
-use serenity::{Result, async_trait};
+use serenity::{
+    all::{Message, Ready},
+    async_trait,
+    prelude::*,
+};
 use std::cmp::Ordering;
-
-use tokio::sync::mpsc::{Sender, channel};
-use tokio::task;
-use tokio::time::{self, Duration};
-
-// debug
-//const COIN_CHANNEL: u64 = 1368929242229903360;
-// active
+use tokio::{
+    sync::mpsc::{Sender, channel},
+    task,
+    time::Duration,
+};
 
 pub struct Handler {
     pub sender: Sender<Request>,
@@ -132,45 +130,11 @@ impl EventHandler for Handler {
     }
 }
 
-async fn coin_creation_check(
-    period: Duration,
-    sender: Sender<Request>,
-    ctx: Context,
-) -> Result<()> {
-    let mut interval = time::interval(period);
-    let mut start_time = time::Instant::now();
-    let mut coin_timer =
-        time::Duration::from_secs(random_between(1, crate::environment::COIN_TIME as i64) as u64);
-
-    loop {
-        interval.tick().await;
-        Handler::send_command_isolated(&sender, Command::UpdateCoins).await;
-        if (time::Instant::now() - start_time) > coin_timer {
-            // runs every second
-            if let Some(coin_message) =
-                Handler::send_command_isolated(&sender, Command::CreateCoin).await
-            {
-                let message = Into::<ChannelId>::into(crate::environment::coin_channel())
-                    .send_message(&ctx.http, CreateMessage::new().content(coin_message))
-                    .await?;
-                // how do i get this message out there?
-                // pass it through
-                Handler::send_command_isolated(
-                    &sender,
-                    Command::CoinCreateNotification(message, ctx.http.clone()),
-                )
-                .await;
-            }
-            start_time = time::Instant::now();
-            coin_timer = time::Duration::from_secs(random_between(
-                1,
-                crate::environment::COIN_TIME as i64,
-            ) as u64);
-        }
-    }
-}
 impl Handler {
-    async fn send_command_isolated(sender: &Sender<Request>, command: Command) -> Option<String> {
+    pub async fn send_command_isolated(
+        sender: &Sender<Request>,
+        command: Command,
+    ) -> Option<String> {
         let (tx, mut rx) = channel::<Option<String>>(100);
         if let Err(e) = sender
             .send(Request {

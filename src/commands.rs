@@ -4,13 +4,11 @@ use std::time::SystemTime;
 use serenity::all::Http;
 use serenity::all::Message;
 
-use crate::Coin;
-use crate::communication::{BotUser, CoinMessage};
+use crate::communication::CoinMessage;
 use crate::environment;
 use crate::games::*;
-use crate::helpers::s_if;
+use crate::prelude::*;
 use crate::server::Server;
-use crate::user::CoinUser;
 
 pub trait CoinCommands {
     fn get_coin(&mut self, user: BotUser) -> impl Future<Output = Option<String>>;

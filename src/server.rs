@@ -3,12 +3,9 @@ use std::fs;
 use std::time::SystemTime;
 use tokio::sync::mpsc::Receiver;
 
-use crate::Coin;
-use crate::commands::CoinCommands;
-use crate::communication::{BotUser, CoinMessage, Command, Request};
+use crate::communication::CoinMessage;
 use crate::games::Games;
-use crate::helpers::default_timestamp;
-use crate::user::CoinUser;
+use crate::prelude::*;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Result;

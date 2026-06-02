@@ -1,10 +1,9 @@
 use std::time::SystemTime;
 
+use crate::prelude::*;
+
 use crate::choose_message;
-use crate::communication::BotUser;
-use crate::helpers::*;
 use crate::server::Server;
-use crate::user::CoinUser;
 
 pub trait Games {
     fn arena(&mut self, bot_user: BotUser, command: Vec<String>) -> String;

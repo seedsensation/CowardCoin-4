@@ -1,5 +1,6 @@
 use crate::helpers::default_timestamp;
 use serde::{Deserialize, Serialize};
+use serenity::all::{CacheHttp, GuildId, User};
 use std::time::SystemTime;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Ord, Eq)]
@@ -76,5 +77,47 @@ impl PartialEq for CoinUser {
 impl PartialOrd for CoinUser {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.id.partial_cmp(&other.id)
+    }
+}
+
+#[derive(Debug)]
+pub struct BotUser {
+    pub display_name: String,
+    pub nickname: Option<String>,
+    pub id: u64,
+}
+
+impl From<User> for BotUser {
+    fn from(value: User) -> Self {
+        Self {
+            display_name: value.display_name().to_string(),
+            nickname: None,
+            id: value.id.get(),
+        }
+    }
+}
+impl From<&User> for BotUser {
+    fn from(value: &User) -> Self {
+        Self {
+            display_name: value.display_name().to_string(),
+            nickname: None,
+            id: value.id.get(),
+        }
+    }
+}
+
+impl BotUser {
+    pub async fn from_user<T>(user: &User, http: T, guild_id: Option<GuildId>) -> Self
+    where
+        T: CacheHttp,
+    {
+        Self {
+            display_name: user.display_name().into(),
+            nickname: match guild_id {
+                Some(g) => user.nick_in(http, g).await,
+                _ => None,
+            },
+            id: user.id.get(),
+        }
     }
 }

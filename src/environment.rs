@@ -5,7 +5,8 @@ pub const INVESTMENT_TIMER: Duration = Duration::from_mins(10);
 pub const BOT_ID: u64 = 813814751192809543;
 //pub const BOT_ID: u64 = 1023717268624003113;
 
-pub const COIN_TIME: u64 = 1200;
+pub const COIN_MIN_TIME: u64 = 900;
+pub const COIN_MAX_TIME: u64 = 1500;
 
 pub fn coin_channel() -> u64 {
     dotenv::dotenv().ok();
