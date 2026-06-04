@@ -27,7 +27,6 @@ impl CoinCommands for Server {
         }
 
         self.get_mut_user_from_id(&user).coins += self.coin.value;
-        self.clear_coin();
 
         if let Some(msg) = self.coin_message.as_mut() {
             if let Err(why) = msg.delete().await {
@@ -40,13 +39,29 @@ impl CoinCommands for Server {
             return Some("There was an error saving to file.".to_string());
         }
 
-        let user = self.get_user_from_id(&user);
+        let coins = self.get_user_from_id(&user).coins;
 
-        Some(format!(
-            "You got a coin!\nYou now have {} coin{}.",
-            user.coins,
-            s_if(user.coins)
-        ))
+        let message = Some(format!(
+            "{} | You got {}coin!{}\n{} | You now have {} coin{}.",
+            self.coin.rarity.emoji(),
+            self.coin.rarity.a_name(),
+            match self.coin.rarity {
+                Rarity::COMMON => format!(""),
+                _ => format!(
+                    "\n{} | You gained {} coin{}!",
+                    self.coin.rarity.emoji(),
+                    self.coin.value,
+                    s_if(self.coin.value)
+                ),
+            },
+            self.coin.rarity.emoji(),
+            coins,
+            s_if(coins)
+        ));
+
+        self.clear_coin();
+
+        message
     }
 
     /// Output the number of coins that a vector of users has.

@@ -38,7 +38,7 @@ impl Coin {
     pub fn arrival_message(&self) -> String {
         use Rarity::*;
         format!(
-            "{} | {} {}{}\n{} {} {}",
+            "{} | {} {}{}{}",
             self.rarity.emoji(),
             // coin arrival prefix
             //  e.g. "A"
@@ -62,22 +62,26 @@ impl Coin {
             // coin count prefix
             //  e.g. "it's worth"
             match self.rarity {
-                GNOME => "He's worth",
-                COMMON => "",
-                _ => "It's worth",
-            },
-            // coin value
-            match self.rarity {
-                GNOME => String::from("probably infinite"),
-                COMMON => "".into(),
-                _ => self.value.to_string(),
-            },
-            // coin count suffix
-            // e.g. "coins!"
-            match self.rarity {
-                GNOME => String::from("coins lol"),
-                COMMON => "".into(),
-                _ => format!("coin{}!", s_if(self.value)),
+                COMMON => format!(""),
+                _ => format!(
+                    "\n{} | {} {} {}",
+                    self.rarity.emoji(),
+                    match self.rarity {
+                        GNOME => "He's worth",
+                        _ => "It's worth",
+                    },
+                    // coin value
+                    match self.rarity {
+                        GNOME => String::from("probably infinite"),
+                        _ => self.value.to_string(),
+                    },
+                    // coin count suffix
+                    // e.g. "coins!"
+                    match self.rarity {
+                        GNOME => String::from("coins lol"),
+                        _ => format!("coin{}!", s_if(self.value)),
+                    }
+                ),
             }
         )
     }
@@ -123,6 +127,20 @@ impl Rarity {
             GNOME => "gnome ",
         }
     }
+
+    pub fn a_name(&self) -> String {
+        use Rarity::*;
+        format!(
+            "{}{}",
+            match self {
+                NONE => "",
+                UNCOMMON => "an ",
+                _ => "a ",
+            },
+            self.name()
+        )
+    }
+
     pub fn emoji(&self) -> &str {
         use Rarity::*;
         match self {
