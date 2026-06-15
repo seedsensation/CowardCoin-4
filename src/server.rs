@@ -33,6 +33,14 @@ where
         use Command::*;
         match command {
             GetCoin(bot_user) => self.get_coin(bot_user).await,
+            ClearCoin => {
+                self.clear_coin().await;
+                None
+            }
+            CoinEscape => {
+                self.coin_escape().await;
+                None
+            }
             CoinCount(bot_user) => Some(self.coin_count(vec![bot_user])),
             CoinCountMultiple(bot_users) => Some(self.coin_count(bot_users)),
             CoinLeaderboard(bot_user) => Some(self.coin_leaderboard(bot_user)),
@@ -141,9 +149,5 @@ impl Server {
                 self.users.last_mut().unwrap()
             }
         }
-    }
-
-    pub fn clear_coin(&mut self) {
-        self.coin = Coin::none();
     }
 }

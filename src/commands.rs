@@ -12,6 +12,8 @@ use crate::server::Server;
 
 pub trait CoinCommands {
     fn get_coin(&mut self, user: BotUser) -> impl Future<Output = Option<String>>;
+    fn clear_coin(&mut self) -> impl Future<Output = ()>;
+    fn coin_escape(&mut self) -> impl Future<Output = ()>;
     fn coin_count(&mut self, users: Vec<BotUser>) -> String;
     fn give_coin(&mut self, sender: BotUser, recipient: BotUser, amount: i64) -> String;
     fn create_coin(&mut self) -> Option<String>;
@@ -28,13 +30,13 @@ impl CoinCommands for Server {
 
         self.get_mut_user_from_id(&user).coins += self.coin.value;
 
-        if let Some(msg) = self.coin_message.as_mut() {
-            if let Err(why) = msg.delete().await {
-                println!("Error deleting coin message: {why:?}");
-            }
-        }
+        //if let Some(msg) = self.coin_message.as_mut() {
+        //    if let Err(why) = msg.delete().await {
+        //        println!("Error deleting coin message: {why:?}");
+        //    }
+        //}
 
-        self.coin_message = None;
+        //self.coin_message = None;
         if let Err(_) = self.save() {
             return Some("There was an error saving to file.".to_string());
         }
@@ -59,9 +61,36 @@ impl CoinCommands for Server {
             s_if(coins)
         ));
 
-        self.clear_coin();
+        self.clear_coin().await;
 
         message
+    }
+
+    async fn coin_escape(&mut self) {
+        if let Some(message) = self.coin_message.as_mut() {
+            if let Err(why) = message
+                .msg
+                .edit(
+                    &message.http,
+                    serenity::builder::EditMessage::new().content(self.coin.escape_message()),
+                )
+                .await
+            {
+                eprintln!("Error editing coin message: {why:?}")
+            }
+            self.coin_message = None;
+            self.coin = Coin::none();
+        }
+    }
+    async fn clear_coin(&mut self) {
+        if let Some(msg) = self.coin_message.as_mut() {
+            if let Err(why) = msg.delete().await {
+                println!("Error deleting coin message: {why:?}");
+            }
+        }
+
+        self.coin_message = None;
+        self.coin = Coin::none();
     }
 
     /// Output the number of coins that a vector of users has.
@@ -168,7 +197,8 @@ impl CoinCommands for Server {
             } else {
                 sender_local.time_of_last_investment = SystemTime::now();
                 let chance = crate::helpers::random_between(0, 100);
-                if chance > 90 {
+                eprintln!("Chance of dividends: {chance}/100.");
+                if chance >= 90 {
                     let diff = recipient_local.coins / 2;
                     sender_local.coins += diff;
                     recipient_local.coins -= diff;
@@ -266,10 +296,14 @@ impl CoinCommands for Server {
                     "{}. {}{}{} - {} coin{}\n",
                     n + 1,
                     bold,
-                    this_user
-                        .nickname
-                        .clone()
-                        .unwrap_or(this_user.display_name.clone()),
+                    if this_user.id == crate::environment::BOT_ID {
+                        "_The CowardCoin™ Bank_".to_string()
+                    } else {
+                        this_user
+                            .nickname
+                            .clone()
+                            .unwrap_or(this_user.display_name.clone())
+                    },
                     bold,
                     this_user.coins,
                     s_if(this_user.coins)
@@ -284,6 +318,13 @@ impl CoinCommands for Server {
             msg: message,
             http: http,
         });
+        //// wait for COIN_TIMEOUT seconds
+        //tokio::time::sleep(tokio::time::Duration::from_secs(
+        //    crate::environment::COIN_TIMEOUT,
+        //))
+        //.await;
+        //// then make the coin escape
+        //self.coin_escape().await;
     }
 
     fn update_coins(&mut self) {

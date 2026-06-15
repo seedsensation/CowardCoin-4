@@ -1,12 +1,17 @@
+use crate::choose_message;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
-use serenity::Result;
-use serenity::all::{ChannelId, CreateMessage};
-use serenity::prelude::*;
+use serenity::{
+    Result,
+    all::{ChannelId, CreateMessage},
+    prelude::*,
+};
 use std::ops::{Add, Sub};
 
-use tokio::sync::mpsc::Sender;
-use tokio::time::{self, Duration};
+use tokio::{
+    sync::mpsc::Sender,
+    time::{self, Duration},
+};
 
 /// Struct for handling coins
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -83,6 +88,49 @@ impl Coin {
                     }
                 ),
             }
+        )
+    }
+
+    pub fn escape_message(&self) -> String {
+        use Rarity::*;
+        format!(
+            "{} The {} {}{}{}{}",
+            choose_message!(
+                "🏃‍♂️",
+                "🏃‍♂️‍➡️",
+                "🏃",
+                "🏃‍➡️",
+                "🏃‍♀️",
+                "🏃‍♀️‍➡️",
+                "<a:baaulpSpin:1059203066018156675>",
+                "<a:cainedansandpemaneleLOL:751118345335603264>",
+                "<a:violence:726858564509106216>",
+            ),
+            self.rarity.emoji(),
+            self.rarity.name(),
+            match self.rarity {
+                GNOME => "",
+                _ => "coin ",
+            },
+            match self.rarity {
+                COMMON => "".to_string(),
+                _ => format!(
+                    "(worth {} coin{}) ",
+                    match self.rarity {
+                        GNOME => "probably infinite".to_string(),
+                        _ => self.value.to_string(),
+                    },
+                    s_if(self.value)
+                ),
+            },
+            choose_message!(
+                "ran away...",
+                "escaped!",
+                "made a dramatic getaway.",
+                "climbs in a car and drives away!",
+                "saw weakness in you, and leaves.",
+                "catches on fire, and dies!"
+            )
         )
     }
 }
@@ -253,6 +301,8 @@ pub async fn coin_creation_check(
                     Command::CoinCreateNotification(message, ctx.http.clone()),
                 )
                 .await;
+                eprintln!("Coin message sent!");
+                tokio::task::spawn(coin_timer_func(sender.clone()));
             }
             start_time = time::Instant::now();
             coin_timer = time::Duration::from_secs(random_between(
@@ -261,4 +311,17 @@ pub async fn coin_creation_check(
             ) as u64);
         }
     }
+}
+
+async fn coin_timer_func(sender: Sender<Request>) {
+    eprintln!(
+        "Starting {} counter to coin timing out.",
+        crate::environment::COIN_TIMEOUT
+    );
+    tokio::time::sleep(tokio::time::Duration::from_secs(
+        crate::environment::COIN_TIMEOUT,
+    ))
+    .await;
+    eprintln!("Coin timer gone off!");
+    Handler::send_command_isolated(&sender, Command::CoinEscape).await;
 }

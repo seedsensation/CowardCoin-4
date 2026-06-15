@@ -8,6 +8,8 @@ pub const BOT_ID: u64 = 813814751192809543;
 pub const COIN_MIN_TIME: u64 = 900;
 pub const COIN_MAX_TIME: u64 = 1500;
 
+pub const COIN_TIMEOUT: u64 = 30;
+
 pub fn coin_channel() -> u64 {
     dotenv::dotenv().ok();
     str::parse(&std::env::var("COIN_CHANNEL").expect("Expected COIN_CHANNEL in the environment"))

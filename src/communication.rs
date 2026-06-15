@@ -18,6 +18,8 @@ pub enum Command {
     CoinCreateNotification(Message, Arc<Http>),
     Arena(BotUser, Vec<String>),
     UpdateCoins,
+    ClearCoin,
+    CoinEscape,
 }
 
 #[derive(Debug)]
