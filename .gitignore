@@ -2,6 +2,7 @@
 .env
 *~
 /data.json
+/data_backup.json
 \#*
 .\#*
 /update.sh

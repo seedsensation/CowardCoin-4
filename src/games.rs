@@ -383,7 +383,7 @@ Your current strength allows you to perform a **Coin Trick** worth {} coin{}.
 fn required_level_for_trick(amount: i64, count: i64) -> i64 {
     // max(coins * (1.1 * (level - 1))) = amount
     // level = (level / coins / 1.1) + 1
-    f64::ceil((amount as f64 / f64::max(count as f64, 1f64) / 1.1 as f64) + 1.0) as i64
+    f64::ceil((amount as f64 / f64::max(i64::abs(count) as f64, 1f64) / 1.1 as f64) + 1.0) as i64
 }
 
 impl CoinUser {
