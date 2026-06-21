@@ -3,7 +3,7 @@ use crate::helpers::*;
 use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Ord, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq)]
 pub struct CoinUser {
     pub id: u64,
 
@@ -35,9 +35,9 @@ pub struct CoinUser {
 impl CoinUser {
     pub fn new(id: u64, nickname: Option<String>, display_name: String) -> Self {
         Self {
-            id: id,
-            display_name: display_name,
-            nickname: nickname,
+            id,
+            display_name,
+            nickname,
             coins: 0,
             style_points: 0,
             xp: 0,
@@ -91,7 +91,7 @@ impl CoinUser {
         }
     }
     pub fn add_xp_with_response(&mut self, amount: i64) -> String {
-        let level = self.level.clone();
+        let level = self.level;
         self.add_xp(amount);
         if self.level > level {
             format!("\nYou are now Level {}!", self.level)
@@ -109,6 +109,12 @@ impl PartialEq for CoinUser {
 
 impl PartialOrd for CoinUser {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.id.partial_cmp(&other.id)
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for CoinUser {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.id.cmp(&other.id)
     }
 }

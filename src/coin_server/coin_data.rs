@@ -21,13 +21,13 @@ impl Coin {
 
     pub fn none() -> Coin {
         Coin {
-            rarity: Rarity::NONE,
+            rarity: Rarity::None,
             value: 0,
         }
     }
 
     pub fn is_none(&self) -> bool {
-        self.rarity == Rarity::NONE
+        self.rarity == Rarity::None
     }
 
     pub fn arrival_message(&self) -> String {
@@ -38,9 +38,9 @@ impl Coin {
             // coin arrival prefix
             //  e.g. "A"
             match self.rarity {
-                UNCOMMON => "An",
-                GNOME => "A bell tolls in the distance.\nThe",
-                RARE | LEGENDARY | MYTHICAL => {
+                Uncommon => "An",
+                Gnome => "A bell tolls in the distance.\nThe",
+                Rare | Legendary | Mythical => {
                     "**WOW**! A"
                 }
                 _ => "A",
@@ -51,29 +51,29 @@ impl Coin {
             // coin arrival suffix
             //  e.g. "coin appeared!"
             match self.rarity {
-                GNOME => "makes his entrance...",
+                Gnome => "makes his entrance...",
                 _ => "coin appeared!",
             },
             // coin count prefix
             //  e.g. "it's worth"
             match self.rarity {
-                COMMON => format!(""),
+                Common => String::new(),
                 _ => format!(
                     "\n{} | {} {} {}",
                     self.rarity.emoji(),
                     match self.rarity {
-                        GNOME => "He's worth",
+                        Gnome => "He's worth",
                         _ => "It's worth",
                     },
                     // coin value
                     match self.rarity {
-                        GNOME => String::from("probably infinite"),
+                        Gnome => String::from("probably infinite"),
                         _ => self.value.to_string(),
                     },
                     // coin count suffix
                     // e.g. "coins!"
                     match self.rarity {
-                        GNOME => String::from("coins lol"),
+                        Gnome => String::from("coins lol"),
                         _ => format!("coin{}!", s_if(self.value)),
                     }
                 ),
@@ -99,15 +99,15 @@ impl Coin {
             self.rarity.emoji(),
             self.rarity.name(),
             match self.rarity {
-                GNOME => "",
+                Gnome => "",
                 _ => "coin ",
             },
             match self.rarity {
-                COMMON => "".to_string(),
+                Common => "".to_string(),
                 _ => format!(
                     "(worth {} coin{}) ",
                     match self.rarity {
-                        GNOME => "probably infinite".to_string(),
+                        Gnome => "probably infinite".to_string(),
                         _ => self.value.to_string(),
                     },
                     s_if(self.value)
@@ -128,13 +128,13 @@ impl Coin {
 #[derive(Hash, Eq, PartialEq, PartialOrd, Clone, Copy, Serialize, Deserialize, Debug, Default)]
 pub enum Rarity {
     #[default]
-    NONE = 0,
-    COMMON = 1,
-    UNCOMMON = 2,
-    RARE = 3,
-    LEGENDARY = 4,
-    MYTHICAL = 5,
-    GNOME = 6,
+    None = 0,
+    Common = 1,
+    Uncommon = 2,
+    Rare = 3,
+    Legendary = 4,
+    Mythical = 5,
+    Gnome = 6,
 }
 
 impl Rarity {
@@ -142,13 +142,13 @@ impl Rarity {
     pub fn id(&self) -> i64 {
         use Rarity::*;
         match self {
-            NONE => 0,
-            COMMON => 1,
-            UNCOMMON => 2,
-            RARE => 3,
-            LEGENDARY => 4,
-            MYTHICAL => 5,
-            GNOME => 6,
+            None => 0,
+            Common => 1,
+            Uncommon => 2,
+            Rare => 3,
+            Legendary => 4,
+            Mythical => 5,
+            Gnome => 6,
         }
     }
 
@@ -156,13 +156,13 @@ impl Rarity {
     pub fn name(&self) -> &str {
         use Rarity::*;
         match self {
-            NONE => "none ",
-            COMMON => "",
-            UNCOMMON => "uncommon ",
-            RARE => "_rare_ ",
-            LEGENDARY => "**legendary** ",
-            MYTHICAL => "***mythical*** ",
-            GNOME => "gnome ",
+            None => "none ",
+            Common => "",
+            Uncommon => "uncommon ",
+            Rare => "_rare_ ",
+            Legendary => "**legendary** ",
+            Mythical => "***mythical*** ",
+            Gnome => "gnome ",
         }
     }
 
@@ -171,8 +171,8 @@ impl Rarity {
         format!(
             "{}{}",
             match self {
-                NONE => "",
-                UNCOMMON => "an ",
+                None => "",
+                Uncommon => "an ",
                 _ => "a ",
             },
             self.name()
@@ -182,12 +182,12 @@ impl Rarity {
     pub fn emoji(&self) -> &str {
         use Rarity::*;
         match self {
-            COMMON => "<a:bronzecoin:844545666201288755>",
-            UNCOMMON => "<a:silvercoin:844545665911881788>",
-            RARE => "<a:gold:1038495846074941440>",
-            LEGENDARY => "<a:redcoin:844545670709772290>",
-            MYTHICAL => "<a:white:1136340312529318018>",
-            GNOME => "<:gnomeZoom:1079734801831047248>",
+            Common => "<a:bronzecoin:844545666201288755>",
+            Uncommon => "<a:silvercoin:844545665911881788>",
+            Rare => "<a:gold:1038495846074941440>",
+            Legendary => "<a:redcoin:844545670709772290>",
+            Mythical => "<a:white:1136340312529318018>",
+            Gnome => "<:gnomeZoom:1079734801831047248>",
             _ => "<:mastergirBubby:757618593725808710>",
         }
     }
@@ -196,13 +196,13 @@ impl Rarity {
     pub fn from_id(id: i64) -> Rarity {
         use Rarity::*;
         match id {
-            1 => COMMON,
-            2 => UNCOMMON,
-            3 => RARE,
-            4 => LEGENDARY,
-            5 => MYTHICAL,
-            6 => GNOME,
-            _ => NONE,
+            1 => Common,
+            2 => Uncommon,
+            3 => Rare,
+            4 => Legendary,
+            5 => Mythical,
+            6 => Gnome,
+            _ => None,
         }
     }
 
@@ -216,7 +216,7 @@ impl Rarity {
 
     /// Get the highest value rarity
     pub fn max_rarity() -> Rarity {
-        Rarity::GNOME
+        Rarity::Gnome
     }
 
     /// Decide a random rarity
@@ -231,8 +231,8 @@ impl Rarity {
     pub fn calculate_value(&self) -> i64 {
         use Rarity::*;
         match self {
-            COMMON => 1,
-            GNOME => -50,
+            Common => 1,
+            Gnome => -50,
             _ => random_between(self.get_exponent() / 20, (*self + 1).get_exponent() / 20) / 2,
         }
     }
@@ -257,6 +257,6 @@ impl Add<Rarity> for Rarity {
 impl Sub for Rarity {
     type Output = Self;
     fn sub(self, rhs: Self) -> Self {
-        Self::from_id(self.id() + rhs.id())
+        Self::from_id(self.id() - rhs.id())
     }
 }

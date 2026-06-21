@@ -1,14 +1,12 @@
 use super::BotUser;
-use crate::communication::{Command, Request};
-use tokio::sync::mpsc::Sender;
+use crate::communication::Command;
 
 pub fn read_message(
     words: Vec<&str>,
     mentions: Vec<serenity::all::User>,
-    sender: &Sender<Request>,
     user: BotUser,
 ) -> Command {
-    match words.get(0) {
+    match words.first() {
         Some(word) if *word == "get" => return Command::GetCoin(user),
         Some(word) if *word == "coin" => (),
         _ => return Command::NoCommand,
@@ -23,7 +21,7 @@ pub fn read_message(
             },
             "leaderboard" => Command::CoinLeaderboard(user),
             "give" => {
-                if mentions.len() == 0 {
+                if mentions.is_empty() {
                     Command::Error("You haven't mentioned anyone to give coins to.")
                 } else if mentions.len() > 1 {
                     Command::Error("You can only give coins to one person.")
@@ -37,12 +35,12 @@ pub fn read_message(
                     } else if coin_total < 0 {
                         Command::Error("You can't give negative coins!")
                     } else {
-                        Command::GiveCoin(user, mentions.get(0).unwrap().into(), coin_total)
+                        Command::GiveCoin(user, mentions.first().unwrap().into(), coin_total)
                     }
                 }
             }
             "arena" => Command::Arena(user, words.iter().map(|x| x.to_string()).collect()),
-            command @ _ => {
+            command => {
                 println!("Unrecognised command '{command}'");
                 Command::GetCoin(user)
             }

@@ -35,7 +35,7 @@ pub async fn coin_creation_check(
                 // pass it through
                 Handler::send_command_isolated(
                     &sender,
-                    Command::CoinCreateNotification(message, ctx.http.clone()),
+                    Command::CoinCreateNotification(Box::new(message), ctx.http.clone()),
                 )
                 .await;
                 eprintln!("Coin message sent!");

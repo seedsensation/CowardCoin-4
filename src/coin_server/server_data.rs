@@ -3,11 +3,11 @@ use std::fs;
 use std::time::SystemTime;
 use tokio::sync::mpsc::Receiver;
 
-use super::{Coin, CoinCommands, CoinUser, Games};
+use super::{Coin, CoinCommands, CoinUser};
 
 use crate::discord_bot::BotUser;
 
-use crate::communication::{CoinMessage, Command, Request};
+use crate::communication::{CoinMessage, Request};
 
 use crate::helpers::default_timestamp;
 
@@ -32,6 +32,7 @@ impl Server {
                 .read(true)
                 .write(true)
                 .create(true)
+                .truncate(false)
                 .open("./data.json")
                 .unwrap(),
         )
@@ -79,14 +80,13 @@ impl Server {
         let _ = server.save();
         println!("Server running!");
         loop {
-            if let Some(request) = receiver.recv().await {
-                if let Err(why) = request
+            if let Some(request) = receiver.recv().await
+                && let Err(why) = request
                     .reply_to
                     .send(server.run_command(request.command).await)
                     .await
-                {
-                    println!("Error sending message: {why:?}");
-                }
+            {
+                println!("Error sending message: {why:?}");
             }
         }
     }
@@ -113,8 +113,9 @@ impl Server {
         }
     }
 
+    #[inline]
     pub fn sort_by_ids(&mut self) {
-        self.users.sort_by(|x, y| x.id.cmp(&y.id));
+        self.users.sort_by_key(|x| x.id);
     }
 
     pub fn get_mut_user_from_id(&mut self, user: &BotUser) -> &mut CoinUser {

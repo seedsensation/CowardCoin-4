@@ -43,8 +43,8 @@ impl CoinCommands for Server {
                         // end of scope, user is placed back in the vec
                     }
 
-                    if let Err(_) = self.save() {
-                        return Some("There was an error saving to file.".to_string());
+                    if let Err(why) = self.save() {
+                        return Some(format!("Error saving to file: {why:?}"));
                     }
 
                     self.clear_coin().await;
@@ -54,7 +54,7 @@ impl CoinCommands for Server {
                         coin_rarity.emoji(),
                         coin_rarity.a_name(),
                         match self.coin.rarity {
-                            Rarity::COMMON => format!(""),
+                            Rarity::Common => String::new(),
                             _ => format!(
                                 "\n{} | You gained {} coin{}!",
                                 coin_rarity.emoji(),
@@ -80,19 +80,19 @@ impl CoinCommands for Server {
             ),
             Command::CoinLeaderboard(bot_user) => {
                 let mut sorted_users = self.users.clone();
-                sorted_users.sort_by(|x, y| y.coins.cmp(&x.coins));
+                sorted_users.sort_by_key(|x| x.coins);
+                sorted_users.reverse();
 
                 let user = self.get_user_from_id(&bot_user);
 
                 let mut users_vec = (0..(usize::min(10, sorted_users.len())))
-                    .into_iter()
                     .map(|n| {
                         let this_user = sorted_users
-                            .get(n as usize)
+                            .get(n)
                             .expect("Fewer members of leaderboard than expected");
                         let bold = if this_user.id == user.id { "**" } else { "" };
                         format!(
-                            "{}. {}{}{} - {} coin{}\n",
+                            "{}. {}{}{} - {} coin{}",
                             n + 1,
                             bold,
                             if this_user.id == crate::environment::BOT_ID {
@@ -174,18 +174,15 @@ impl CoinCommands for Server {
                 }
             }
             Command::CreateCoin => {
-                if !self.coin_message.is_none() || !self.coin.is_none() {
+                if self.coin_message.is_some() || !self.coin.is_none() {
                     None
                 } else {
                     self.coin = Coin::new();
                     Some(self.coin.arrival_message())
                 }
             }
-            Command::CoinCreateNotification(message, http) => {
-                self.coin_message = Some(CoinMessage {
-                    msg: message,
-                    http: http,
-                });
+            Command::CoinCreateNotification(msg, http) => {
+                self.coin_message = Some(CoinMessage { msg: *msg, http });
                 None
             }
             Command::Arena(bot_user, items) => Some(self.arena(bot_user, items)),
@@ -194,16 +191,16 @@ impl CoinCommands for Server {
                 None
             }
             Command::ClearCoin => {
-                if let Some(msg) = self.coin_message.as_mut() {
-                    if let Err(why) = msg.delete().await {
-                        eprintln!("Error deleting coin message: {why:?}");
-                    }
+                if let Some(msg) = self.coin_message.as_mut()
+                    && let Err(why) = msg.delete().await
+                {
+                    eprintln!("Error deleting coin message: {why:?}");
                 }
                 None
             }
             Command::CoinEscape => {
-                if let Some(message) = self.coin_message.as_mut() {
-                    if let Err(why) = message
+                if let Some(message) = self.coin_message.as_mut()
+                    && let Err(why) = message
                         .msg
                         .edit(
                             &message.http,
@@ -211,9 +208,8 @@ impl CoinCommands for Server {
                                 .content(self.coin.escape_message()),
                         )
                         .await
-                    {
-                        eprintln!("Error editing coin message: {why:?}");
-                    }
+                {
+                    eprintln!("Error editing coin message: {why:?}");
                 }
                 self.coin_message = None;
                 self.coin = Coin::none();
@@ -225,10 +221,10 @@ impl CoinCommands for Server {
     }
     #[inline]
     async fn clear_coin(&mut self) {
-        if let Some(msg) = self.coin_message.as_mut() {
-            if let Err(why) = msg.delete().await {
-                println!("Error deleting coin message: {why:?}");
-            }
+        if let Some(msg) = self.coin_message.as_mut()
+            && let Err(why) = msg.delete().await
+        {
+            println!("Error deleting coin message: {why:?}");
         }
 
         self.coin_message = None;

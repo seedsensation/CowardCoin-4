@@ -12,26 +12,26 @@ pub trait Games {
 }
 
 enum TrickState {
-    ERR,
-    FAIL,
-    BAD,
-    GOOD,
-    CRIT,
+    Err,
+    Fail,
+    Bad,
+    Good,
+    Crit,
 }
 
 impl From<i64> for TrickState {
     fn from(value: i64) -> Self {
         use TrickState::*;
-        if value > 100 || value < 0 {
-            ERR
+        if !(0..=100).contains(&value) {
+            Err
         } else if value >= 85 {
-            CRIT
+            Crit
         } else if value > 60 {
-            GOOD
+            Good
         } else if value >= 20 {
-            BAD
+            Bad
         } else {
-            FAIL
+            Fail
         }
     }
 }
@@ -52,8 +52,8 @@ impl Games for Server {
                         } else {
                             user.coins -= amount;
                             let response = user.add_xp_with_response(amount);
-                            if let Err(_) = self.save() {
-                                return "Error saving to file.".to_string();
+                            if let Err(why) = self.save() {
+                                return format!("Error saving to file: {why:?}");
                             }
                             return format!(
                                 "You pay {amount} CowardCoin{} to {}. You gain {amount} XP.{}",
@@ -84,7 +84,7 @@ impl Games for Server {
         let user = self.get_mut_user_from_id(&bot_user);
 
         if user.coins == 0 {
-            return "You need to have at least 1 coin to do a trick.".to_string();
+            "You need to have at least 1 coin to do a trick.".to_string()
         } else if user.level >= (required_level_for_trick(amount, user.coins) - 1) {
             if SystemTime::now()
                 .duration_since(user.time_of_last_trick)
@@ -110,13 +110,13 @@ impl Games for Server {
             user.style_points += points;
             user.time_of_last_trick = SystemTime::now();
             let trick_state: TrickState = points.into();
-            let thrown_item = *random_from::<&str>(&vec![
+            let thrown_item = choose_message![
                 "Christian baby",
                 "rotten tomato",
                 "Oscar Trophy",
                 "Nuclear Bomb",
                 "Gold CowardCoin",
-            ]);
+            ];
 
             let distraction = choose_message![
                 "women",
@@ -198,8 +198,8 @@ impl Games for Server {
                     )
                 ],
                 match trick_state {
-                    TrickState::ERR => "something goes terribly wrong...".to_string(),
-                    TrickState::FAIL => choose_message![
+                    TrickState::Err => "something goes terribly wrong...".to_string(),
+                    TrickState::Fail => choose_message![
                         "unfortunately die in the attempt...",
                         "embarrass yourself horrifically. You'll never be able to recover from this.",
                         "land head-first on the ground...",
@@ -221,7 +221,7 @@ impl Games for Server {
                             ]
                         )
                     ],
-                    TrickState::CRIT => choose_message![
+                    TrickState::Crit => choose_message![
                         "land gracefully on one leg!",
                         format!(
                             "do a {} flip before you land!",
@@ -240,7 +240,7 @@ impl Games for Server {
                             "avoid the temptation of {distraction}, and take the gold medal at the Olympics!"
                         )
                     ],
-                    TrickState::BAD | TrickState::GOOD => choose_message![
+                    TrickState::Bad | TrickState::Good => choose_message![
                         "it's pretty mediocre...",
                         "awkwardly stumble as you land.",
                         "land on the back of a horse! The horse stares at you in disappointment.",
@@ -258,7 +258,7 @@ impl Games for Server {
                     ],
                 },
                 match trick_state {
-                    TrickState::CRIT => choose_message![
+                    TrickState::Crit => choose_message![
                         "The crowd jump out of their seats. Every single one of them does a backflip.",
                         "The crowd levitate off the ground ominously. Their eyes glow white.",
                         "The crowd storms the field, and murders the pitcher.",
@@ -273,7 +273,7 @@ impl Games for Server {
                             ]
                         ),
                     ],
-                    TrickState::GOOD | TrickState::BAD => choose_message![
+                    TrickState::Good | TrickState::Bad => choose_message![
                         "The crowd goes 'huh?'.",
                         "The crowd doesn't notice.",
                         "The crowd cheers, but you can tell that their heart isn't really in it.",
@@ -304,7 +304,7 @@ impl Games for Server {
                             ],
                         )
                     ],
-                    TrickState::FAIL => choose_message![
+                    TrickState::Fail => choose_message![
                         "The crowd goes wild with dismay, then commits mass suicide.",
                         "The crowd sighs in relief. They'll be able to get a refund, at least.",
                         format!(
@@ -319,11 +319,11 @@ impl Games for Server {
                         )
                     ],
 
-                    TrickState::ERR =>
+                    TrickState::Err =>
                         "The crowd glitches. Something has gone terribly wrong.".to_string(),
                 },
                 match trick_state {
-                    TrickState::FAIL => {
+                    TrickState::Fail => {
                         user.coins -= amount;
                         format!(
                             "You lose {amount} coin{}...\nYou now have {} coins.\n",
@@ -331,7 +331,7 @@ impl Games for Server {
                             user.coins
                         )
                     }
-                    TrickState::CRIT => {
+                    TrickState::Crit => {
                         user.coins += amount;
                         format!(
                             "You gain {amount} coin{}!!\nYou now have {} coins.\n",
@@ -451,7 +451,7 @@ Your current strength allows you to perform a **Coin Trick** worth {} coin{}.
             100 - user.xp,
             s_if(100 - user.xp),
             user.max_coins_for_trick(),
-            s_if(user.max_coins_for_trick() as i64)
+            s_if(user.max_coins_for_trick())
         )
     }
 }
@@ -460,7 +460,7 @@ Your current strength allows you to perform a **Coin Trick** worth {} coin{}.
 fn required_level_for_trick(amount: i64, count: i64) -> i64 {
     // max(coins * (1.1 * (level - 1))) = amount
     // level = (level / coins / 1.1) + 1
-    f64::ceil((amount as f64 / f64::max(i64::abs(count) as f64, 1f64) / 1.1 as f64) + 1.0) as i64
+    f64::ceil((amount as f64 / f64::max(i64::abs(count) as f64, 1.0) / 1.1) + 1.0) as i64
 }
 
 impl super::CoinUser {
@@ -523,9 +523,9 @@ impl super::CoinUser {
     }
 
     pub fn xp_bar(&self) -> String {
-        return "▓".repeat(((self.xp / self.xp_cap()) * 10) as usize)
+        "▓".repeat(((self.xp / self.xp_cap()) * 10) as usize)
             + "░"
                 .repeat(10 - ((self.xp / self.xp_cap()) * 10) as usize)
-                .as_str();
+                .as_str()
     }
 }
