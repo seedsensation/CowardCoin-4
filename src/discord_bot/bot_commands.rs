@@ -1,0 +1,53 @@
+use super::BotUser;
+use crate::communication::{Command, Request};
+use tokio::sync::mpsc::Sender;
+
+pub fn read_message(
+    words: Vec<&str>,
+    mentions: Vec<serenity::all::User>,
+    sender: &Sender<Request>,
+    user: BotUser,
+) -> Command {
+    match words.get(0) {
+        Some(word) if *word == "get" => return Command::GetCoin(user),
+        Some(word) if *word == "coin" => (),
+        _ => return Command::NoCommand,
+    };
+
+    if let Some(word) = words.get(1) {
+        let word = *word;
+        match word {
+            "count" => match mentions.is_empty() {
+                true => Command::CoinCount(user),
+                false => Command::CoinCountMultiple(mentions.iter().map(|x| x.into()).collect()),
+            },
+            "leaderboard" => Command::CoinLeaderboard(user),
+            "give" => {
+                if mentions.len() == 0 {
+                    Command::Error("You haven't mentioned anyone to give coins to.")
+                } else if mentions.len() > 1 {
+                    Command::Error("You can only give coins to one person.")
+                } else {
+                    let coin_total = words
+                        .iter()
+                        .filter_map(|word| word.parse::<i64>().ok())
+                        .sum();
+                    if coin_total == 0 {
+                        Command::Error("Please make sure you're giving at least one coin.")
+                    } else if coin_total < 0 {
+                        Command::Error("You can't give negative coins!")
+                    } else {
+                        Command::GiveCoin(user, mentions.get(0).unwrap().into(), coin_total)
+                    }
+                }
+            }
+            "arena" => Command::Arena(user, words.iter().map(|x| x.to_string()).collect()),
+            command @ _ => {
+                println!("Unrecognised command '{command}'");
+                Command::GetCoin(user)
+            }
+        }
+    } else {
+        Command::GetCoin(user)
+    }
+}

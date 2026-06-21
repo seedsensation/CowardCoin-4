@@ -3,9 +3,13 @@ use std::fs;
 use std::time::SystemTime;
 use tokio::sync::mpsc::Receiver;
 
-use crate::communication::CoinMessage;
-use crate::games::Games;
-use crate::prelude::*;
+use super::{Coin, CoinCommands, CoinUser, Games};
+
+use crate::discord_bot::BotUser;
+
+use crate::communication::{CoinMessage, Command, Request};
+
+use crate::helpers::default_timestamp;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
@@ -19,44 +23,6 @@ pub struct Server {
     pub coin_message: Option<CoinMessage>,
     #[serde(default = "default_timestamp")]
     pub time_of_last_interest: SystemTime,
-}
-
-pub trait ExecuteCommands: CoinCommands {
-    async fn execute_command(&mut self, command: Command) -> Option<String>;
-}
-
-impl<T> ExecuteCommands for T
-where
-    T: CoinCommands + Games,
-{
-    async fn execute_command(&mut self, command: Command) -> Option<String> {
-        use Command::*;
-        match command {
-            GetCoin(bot_user) => self.get_coin(bot_user).await,
-            ClearCoin => {
-                self.clear_coin().await;
-                None
-            }
-            CoinEscape => {
-                self.coin_escape().await;
-                None
-            }
-            CoinCount(bot_user) => Some(self.coin_count(vec![bot_user])),
-            CoinCountMultiple(bot_users) => Some(self.coin_count(bot_users)),
-            CoinLeaderboard(bot_user) => Some(self.coin_leaderboard(bot_user)),
-            GiveCoin(sender, recipient, amount) => Some(self.give_coin(sender, recipient, amount)),
-            CreateCoin => self.create_coin(),
-            CoinCreateNotification(message, http) => {
-                self.set_coin_message(message, http).await;
-                None
-            }
-            Arena(bot_user, items) => Some(self.arena(bot_user, items)),
-            UpdateCoins => {
-                self.update_coins();
-                None
-            }
-        }
-    }
 }
 
 impl Server {
@@ -75,6 +41,21 @@ impl Server {
             coin_message: None,
             time_of_last_interest: default_timestamp(),
         })
+    }
+
+    pub unsafe fn get_two_mut_users(
+        &mut self,
+        user1: &BotUser,
+        user2: &BotUser,
+    ) -> (&mut CoinUser, &mut CoinUser) {
+        self.sort_by_ids();
+        let ptr = self.users.as_mut_ptr();
+        unsafe {
+            (
+                &mut *ptr.add(crate::get_index_from_id!(user1 in self)),
+                &mut *ptr.add(crate::get_index_from_id!(user2 in self)),
+            )
+        }
     }
 
     pub fn save(&mut self) -> Result<()> {
@@ -101,7 +82,7 @@ impl Server {
             if let Some(request) = receiver.recv().await {
                 if let Err(why) = request
                     .reply_to
-                    .send(server.execute_command(request.command).await)
+                    .send(server.run_command(request.command).await)
                     .await
                 {
                     println!("Error sending message: {why:?}");

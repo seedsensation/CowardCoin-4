@@ -1,13 +1,14 @@
 use std::time::SystemTime;
 
-use crate::prelude::*;
-
+use super::Server;
 use crate::choose_message;
-use crate::server::Server;
+use crate::discord_bot::BotUser;
+use crate::helpers::*;
 
 pub trait Games {
     fn arena(&mut self, bot_user: BotUser, command: Vec<String>) -> String;
     fn trick(&mut self, bot_user: BotUser, amount: i64) -> String;
+    fn invest(&mut self, bot_user: BotUser, amount: i64) -> String;
 }
 
 enum TrickState {
@@ -348,9 +349,84 @@ impl Games for Server {
             )
         }
     }
+
+    /// Invest coins into the CowardCoin Bank
+    fn invest(&mut self, bot_user: BotUser, amount: i64) -> String {
+        enum InvestmentStatus {
+            Success,
+            Dividends(i64),
+            NotTimeYet(SystemTime),
+        }
+
+        let user_coins: i64;
+        let bank_coins: i64;
+
+        // SAFETY: Do not sort self.users while this scope is active
+        match unsafe {
+            let (sender_local, bank) =
+                self.get_two_mut_users(&bot_user, &(crate::environment::BOT_ID.into()));
+            sender_local.coins -= amount;
+            bank.coins += amount * 5;
+
+            user_coins = sender_local.coins;
+            bank_coins = bank.coins;
+
+            if SystemTime::now()
+                .duration_since(sender_local.time_of_last_investment)
+                .unwrap()
+                < crate::environment::INVESTMENT_TIMER
+            {
+                InvestmentStatus::NotTimeYet(sender_local.time_of_last_investment)
+            } else {
+                sender_local.time_of_last_investment = SystemTime::now();
+
+                let chance = crate::helpers::random_between(0, 100);
+                if chance >= 80 {
+                    let diff = bank.coins / 2;
+                    sender_local.coins += diff;
+                    InvestmentStatus::Dividends(diff)
+                } else {
+                    InvestmentStatus::Success
+                }
+            }
+        } {
+            InvestmentStatus::Success => {
+                format!(
+                    "You have invested {} coin{} in the CowardCoin Bank™.\nYou now have {} coin{}.\nThere are now {} coin{} in the CowardCoin Bank™.",
+                    amount,
+                    s_if(amount),
+                    user_coins,
+                    s_if(user_coins),
+                    bank_coins,
+                    s_if(bank_coins)
+                )
+            }
+            InvestmentStatus::Dividends(dividends) => {
+                format!(
+                    "Congratulations! Your investments have paid off! \nYou receive {} coin{} in dividends from the CowardCoin Bank™.",
+                    dividends,
+                    s_if(dividends)
+                )
+            }
+            InvestmentStatus::NotTimeYet(system_time) => format!(
+                "The stock market's still shifting... You can't make any more investments for another {}.",
+                crate::helpers::seconds_to_string(
+                    if SystemTime::now().duration_since(system_time).unwrap()
+                        < crate::environment::INVESTMENT_TIMER
+                    {
+                        (crate::environment::INVESTMENT_TIMER
+                            - SystemTime::now().duration_since(system_time).unwrap())
+                        .as_secs() as i64
+                    } else {
+                        0i64
+                    }
+                )
+            ),
+        }
+    }
 }
 
-impl Server {
+impl super::Server {
     fn arena_intro(&mut self, bot_user: BotUser) -> String {
         let user = self.get_user_from_id(&bot_user);
         format!(
@@ -380,13 +456,14 @@ Your current strength allows you to perform a **Coin Trick** worth {} coin{}.
     }
 }
 
+#[inline]
 fn required_level_for_trick(amount: i64, count: i64) -> i64 {
     // max(coins * (1.1 * (level - 1))) = amount
     // level = (level / coins / 1.1) + 1
     f64::ceil((amount as f64 / f64::max(i64::abs(count) as f64, 1f64) / 1.1 as f64) + 1.0) as i64
 }
 
-impl CoinUser {
+impl super::CoinUser {
     fn max_coins_for_trick(&self) -> i64 {
         if self.coins < 0 {
             i64::abs(self.coins)

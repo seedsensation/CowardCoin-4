@@ -1,6 +1,6 @@
 use crate::helpers::default_timestamp;
+use crate::helpers::*;
 use serde::{Deserialize, Serialize};
-use serenity::all::{CacheHttp, GuildId, User};
 use std::time::SystemTime;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Ord, Eq)]
@@ -50,6 +50,39 @@ impl CoinUser {
         (100.0 * f64::max(((self.level - 1) as f64 * 0.1) + 1.0, 1.0)) as i64
     }
 
+    pub fn coin_count_message(&self) -> String {
+        format!(
+            "{}**{}** {}\n> - {} coin{}{}{}",
+            if self.xp > 0 || self.level > 1 {
+                format!("{} ", self.arena_title())
+            } else {
+                String::new()
+            },
+            self.nickname.as_ref().unwrap_or(&self.display_name),
+            if self.xp > 0 || self.level > 1 {
+                format!("(Lv. {})", self.level)
+            } else {
+                String::new()
+            },
+            self.coins,
+            s_if(self.coins),
+            if self.style_points > 0 {
+                format!(
+                    "\n> - {} StylePoint{}™",
+                    self.style_points,
+                    s_if(self.style_points),
+                )
+            } else {
+                String::new()
+            },
+            if self.xp > 0 || self.level > 1 {
+                format!("\n> - [{}] - {}/{}", self.xp_bar(), self.xp, self.xp_cap())
+            } else {
+                String::new()
+            }
+        )
+    }
+
     pub fn add_xp(&mut self, amount: i64) {
         self.xp += amount;
         while self.xp >= 100 {
@@ -77,47 +110,5 @@ impl PartialEq for CoinUser {
 impl PartialOrd for CoinUser {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.id.partial_cmp(&other.id)
-    }
-}
-
-#[derive(Debug)]
-pub struct BotUser {
-    pub display_name: String,
-    pub nickname: Option<String>,
-    pub id: u64,
-}
-
-impl From<User> for BotUser {
-    fn from(value: User) -> Self {
-        Self {
-            display_name: value.display_name().to_string(),
-            nickname: None,
-            id: value.id.get(),
-        }
-    }
-}
-impl From<&User> for BotUser {
-    fn from(value: &User) -> Self {
-        Self {
-            display_name: value.display_name().to_string(),
-            nickname: None,
-            id: value.id.get(),
-        }
-    }
-}
-
-impl BotUser {
-    pub async fn from_user<T>(user: &User, http: T, guild_id: Option<GuildId>) -> Self
-    where
-        T: CacheHttp,
-    {
-        Self {
-            display_name: user.display_name().into(),
-            nickname: match guild_id {
-                Some(g) => user.nick_in(http, g).await,
-                _ => None,
-            },
-            id: user.id.get(),
-        }
     }
 }

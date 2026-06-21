@@ -10,10 +10,12 @@ pub fn random_between(low: i64, high: i64) -> i64 {
         .clone()
 }
 
+#[inline]
 pub fn random_from<'a, T>(vals: &'a Vec<T>) -> &'a T {
     vals.choose(&mut rand::rng()).unwrap()
 }
 
+#[inline]
 pub fn random_from_owned<T>(vals: &Vec<T>) -> T
 where
     T: Clone,
@@ -21,6 +23,7 @@ where
     (vals.choose(&mut rand::rng()).unwrap()).clone()
 }
 
+#[inline]
 pub fn s_if(val: i64) -> String {
     match val {
         1 => "",
@@ -35,7 +38,7 @@ macro_rules! choose_message {
 	"`_`".to_string()
     };
     ( $( $x:expr),*$(,)*) => {
-        random_from(&vec![$(MessageType::from($x),)*]).format()
+        crate::helpers::random_from(&vec![$(crate::helpers::MessageType::from($x),)*]).format()
     };
 }
 
@@ -63,7 +66,7 @@ macro_rules! get_index_from_id {
         match $server.users.binary_search_by_key(&$user.id, |x| x.id) {
             Ok(v) => v,
             Err(_) => {
-                $server.users.push(CoinUser::new(
+                $server.users.push(crate::coin_server::CoinUser::new(
                     $user.id,
                     $user.nickname.clone(),
                     $user.display_name.clone(),
@@ -74,6 +77,7 @@ macro_rules! get_index_from_id {
     }};
 }
 
+#[inline]
 pub fn default_timestamp() -> SystemTime {
     SystemTime::UNIX_EPOCH
 }
@@ -108,18 +112,21 @@ pub enum MessageType {
     O(String),
 }
 impl From<&'static str> for MessageType {
+    #[inline]
     fn from(value: &'static str) -> Self {
         Self::S(value)
     }
 }
 
 impl From<String> for MessageType {
+    #[inline]
     fn from(value: String) -> Self {
         Self::O(value)
     }
 }
 
 impl MessageType {
+    #[inline]
     pub fn format(&self) -> String {
         match self {
             Self::O(val) => val.to_string(),

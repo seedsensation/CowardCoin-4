@@ -4,23 +4,11 @@ pub mod communication;
 pub mod environment;
 pub mod helpers;
 
-mod coin;
-mod commands;
+mod coin_server;
 mod discord_bot;
-mod games;
-mod server;
-mod user;
 
-pub mod prelude {
-    pub use crate::coin::{Coin, Rarity};
-    pub use crate::commands::CoinCommands;
-    pub use crate::communication::{Command, Request};
-    pub use crate::discord_bot::Handler;
-    pub use crate::helpers::*;
-    pub use crate::user::{BotUser, CoinUser};
-}
-
-use crate::prelude::*;
+use coin_server::Server;
+use discord_bot::*;
 
 use dotenv::dotenv;
 use serenity::prelude::*;
@@ -44,7 +32,7 @@ async fn main() {
         .await
         .expect("Error creating client...");
 
-    task::spawn(server::Server::start(rx));
+    task::spawn(Server::start(rx));
     if let Err(why) = client.start().await {
         println!("Client error: {why:?}");
     }

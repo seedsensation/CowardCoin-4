@@ -1,11 +1,11 @@
-use crate::prelude::*;
-
 use serenity::{
     Result,
     all::{Http, Message},
 };
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
+
+use crate::discord_bot::BotUser;
 
 #[derive(Debug)]
 pub enum Command {
@@ -20,6 +20,8 @@ pub enum Command {
     UpdateCoins,
     ClearCoin,
     CoinEscape,
+    NoCommand,
+    Error(&'static str),
 }
 
 #[derive(Debug)]
