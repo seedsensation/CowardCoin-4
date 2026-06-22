@@ -49,19 +49,21 @@ impl CoinCommands for Server {
 
                     self.clear_coin().await;
 
+                    let num_of_coins = match coin_rarity {
+                        Rarity::Common => format_args!(""),
+                        _ => format_args!(
+                            "\n{} | You gained {} coin{}!",
+                            coin_rarity.emoji(),
+                            coin_value,
+                            s_if(coin_value)
+                        ),
+                    };
+
                     Some(format!(
                         "{} | You got {}coin!{}\n{} | You now have {} coin{}.",
                         coin_rarity.emoji(),
                         coin_rarity.a_name(),
-                        match self.coin.rarity {
-                            Rarity::Common => String::new(),
-                            _ => format!(
-                                "\n{} | You gained {} coin{}!",
-                                coin_rarity.emoji(),
-                                coin_value,
-                                s_if(coin_value)
-                            ),
-                        },
+                        num_of_coins,
                         coin_rarity.emoji(),
                         coins,
                         s_if(coins)
