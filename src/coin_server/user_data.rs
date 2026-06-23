@@ -25,6 +25,9 @@ pub struct CoinUser {
     #[serde(default)]
     pub level: i64,
 
+    #[serde(default)]
+    pub eaten: i64,
+
     #[serde(default = "default_timestamp")]
     pub time_of_last_trick: SystemTime,
 
@@ -42,6 +45,7 @@ impl CoinUser {
             style_points: 0,
             xp: 0,
             level: 1,
+            eaten: 0,
             time_of_last_trick: SystemTime::UNIX_EPOCH,
             time_of_last_investment: SystemTime::UNIX_EPOCH,
         }
@@ -52,7 +56,7 @@ impl CoinUser {
 
     pub fn coin_count_message(&self) -> String {
         format!(
-            "{}**{}** {}\n> - {} coin{}{}{}",
+            "{}**{}** {}\n> - {} coin{}{}{}{}",
             if self.xp > 0 || self.level > 1 {
                 format!("{} ", self.arena_title())
             } else {
@@ -77,6 +81,11 @@ impl CoinUser {
             },
             if self.xp > 0 || self.level > 1 {
                 format!("\n> - [{}] - {}/{}", self.xp_bar(), self.xp, self.xp_cap())
+            } else {
+                String::new()
+            },
+            if self.eaten > 0 {
+                format!("\n> - You have eaten {} coins.", self.eaten)
             } else {
                 String::new()
             }
