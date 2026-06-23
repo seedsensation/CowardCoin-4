@@ -129,6 +129,13 @@ impl CoinCommands for Server {
                 ));
                 Some(users_vec.join("\n"))
             }
+            Command::Invest(sender, amount) => {
+                if self.get_user_from_id(&sender).coins < amount {
+                    Some("You can't afford to invest that many coins!".into())
+                } else {
+                    Some(self.invest(sender, amount))
+                }
+            }
             Command::GiveCoin(sender, recipient, amount) => {
                 if sender.id == recipient.id {
                     Some(self.trick(sender, amount))

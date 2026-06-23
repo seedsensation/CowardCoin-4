@@ -39,6 +39,19 @@ pub fn read_message(
                     }
                 }
             }
+            "invest" => {
+                let coin_total = words
+                    .iter()
+                    .filter_map(|word| word.parse::<i64>().ok())
+                    .sum();
+                if coin_total == 0 {
+                    Command::Error("Please make sure you're giving at least one coin.")
+                } else if coin_total < 0 {
+                    Command::Error("You can't give negative coins!")
+                } else {
+                    Command::Invest(user, coin_total)
+                }
+            }
             "arena" => Command::Arena(user, words.iter().map(|x| x.to_string()).collect()),
             command => {
                 println!("Unrecognised command '{command}'");

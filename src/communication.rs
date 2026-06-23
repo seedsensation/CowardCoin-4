@@ -20,6 +20,7 @@ pub enum Command {
     UpdateCoins,
     ClearCoin,
     CoinEscape,
+    Invest(BotUser, i64),
     NoCommand,
     Error(&'static str),
 }
