@@ -398,8 +398,8 @@ impl Games for Server {
             InvestmentStatus::Success => {
                 format!(
                     "You have invested {} coin{} in the CowardCoin Bank™.\nYou now have {} coin{}.\nThere are now {} coin{} in the CowardCoin Bank™.\nThe market will shift in {}.",
-                    amount * 3,
-                    s_if(amount * 3),
+                    amount,
+                    s_if(amount),
                     user_coins,
                     s_if(user_coins),
                     bank_coins,
