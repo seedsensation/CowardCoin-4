@@ -9,6 +9,7 @@ use crate::discord_bot::BotUser;
 
 #[derive(Debug)]
 pub enum Command {
+    // user commands
     GetCoin(BotUser),
     CoinCount(BotUser),
     CoinCountMultiple(Vec<BotUser>),
@@ -17,6 +18,8 @@ pub enum Command {
     EatCoin(BotUser, i64),
     Invest(BotUser, i64),
     Arena(BotUser, Vec<String>),
+
+    // internal commands
     CreateCoin,
     CoinCreateNotification(Box<Message>, Arc<Http>),
     UpdateCoins,
@@ -24,6 +27,30 @@ pub enum Command {
     CoinEscape,
     NoCommand,
     Error(&'static str),
+}
+
+impl Command {
+    pub fn should_save(&self) -> bool {
+        use Command::*;
+        match self {
+	    // mark everything that should save as true
+	    // put a comment on each explaining why it should save
+	    // when this command is run
+
+	    // when a coin is gotten it should save
+            GetCoin(..)
+
+		// when a coin is given it updates coin numbers
+		| GiveCoin(..)
+		// when a coin is eaten it updates coin numbers
+		| EatCoin(..)
+		// when a coin is invested it updates coin numbers
+		| Invest(..)
+		// when you level up it updates numbers
+		| Arena(..) => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug)]

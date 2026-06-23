@@ -20,7 +20,8 @@ pub trait CoinCommands {
 impl CoinCommands for Server {
     /// Run a command from the `Command` enum.
     async fn run_command(&mut self, command: Command) -> Option<String> {
-        match command {
+        let should_save = command.should_save();
+        let output = match command {
             Command::GetCoin(bot_user) => {
                 if self.coin.is_none() {
                     None
@@ -41,10 +42,6 @@ impl CoinCommands for Server {
                         coins = user.coins;
 
                         // end of scope, user is placed back in the vec
-                    }
-
-                    if let Err(why) = self.save() {
-                        return Some(format!("Error saving to file: {why:?}"));
                     }
 
                     self.clear_coin().await;
@@ -238,21 +235,24 @@ impl CoinCommands for Server {
                 } else {
                     format_args!("")
                 };
-                if let Err(why) = self.save() {
-                    Some(format!("Error saving to file: {why:?}"))
-                } else {
-                    Some(format!(
-                        "You ate {} coin{}!{}",
-                        match amount {
-                            1 => "a".to_string(),
-                            a => a.to_string(),
-                        },
-                        s_if(amount),
-                        eat_count
-                    ))
-                }
+
+                Some(format!(
+                    "You ate {} coin{}!{}",
+                    match amount {
+                        1 => "a".to_string(),
+                        a => a.to_string(),
+                    },
+                    s_if(amount),
+                    eat_count
+                ))
             }
+        };
+
+        if should_save && let Err(why) = self.save() {
+            eprintln!("Error saving: {why:?}");
         }
+
+        output
     }
     #[inline]
     async fn clear_coin(&mut self) {

@@ -52,9 +52,6 @@ impl Games for Server {
                         } else {
                             user.coins -= amount;
                             let response = user.add_xp_with_response(amount);
-                            if let Err(why) = self.save() {
-                                return format!("Error saving to file: {why:?}");
-                            }
                             return format!(
                                 "You pay {amount} CowardCoin{} to {}. You gain {amount} XP.{}",
                                 s_if(amount),
@@ -360,37 +357,38 @@ impl Games for Server {
             NotTimeYet(SystemTime),
         }
 
-        let mut user_coins: i64;
-        let mut bank_coins: i64;
+        let user_coins: i64;
+        let bank_coins: i64;
 
         // SAFETY: Do not sort self.users while this scope is active
         match unsafe {
             let (sender_local, bank) =
                 self.get_two_mut_users(&bot_user, &(crate::environment::BOT_ID.into()));
-            sender_local.coins -= amount;
-            bank.coins += amount * 3;
-
-            user_coins = sender_local.coins;
-            bank_coins = bank.coins;
 
             if SystemTime::now()
                 .duration_since(sender_local.time_of_last_investment)
                 .unwrap()
                 < crate::environment::INVESTMENT_TIMER
             {
+                user_coins = sender_local.coins;
+                bank_coins = bank.coins;
                 InvestmentStatus::NotTimeYet(sender_local.time_of_last_investment)
             } else {
                 sender_local.time_of_last_investment = SystemTime::now();
+                sender_local.coins -= amount;
+                bank.coins += amount * 3;
 
                 let chance = crate::helpers::random_between(0, 100);
                 if chance >= 80 {
                     let diff = bank.coins / 2;
                     sender_local.coins += diff;
                     bank.coins -= diff;
-                    user_coins += diff;
-                    bank_coins -= diff;
+                    user_coins = sender_local.coins;
+                    bank_coins = bank.coins;
                     InvestmentStatus::Dividends(diff)
                 } else {
+                    user_coins = sender_local.coins;
+                    bank_coins = bank.coins;
                     InvestmentStatus::Success
                 }
             }
