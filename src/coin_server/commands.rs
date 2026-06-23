@@ -247,7 +247,7 @@ impl CoinCommands for Server {
                 Ok(v) => {
                     let user = self.users.get_mut(v).unwrap();
                     let coins_change = (user.coins as f64
-                        * (crate::helpers::random_between(850, 1150) as f64 / 1000f64))
+                        * (crate::helpers::random_between(650, 1150) as f64 / 1000f64))
                         as i64;
                     eprintln!("Updating investments by {}", coins_change - user.coins);
                     user.coins = coins_change;

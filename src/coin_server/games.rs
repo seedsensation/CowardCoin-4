@@ -358,15 +358,15 @@ impl Games for Server {
             NotTimeYet(SystemTime),
         }
 
-        let user_coins: i64;
-        let bank_coins: i64;
+        let mut user_coins: i64;
+        let mut bank_coins: i64;
 
         // SAFETY: Do not sort self.users while this scope is active
         match unsafe {
             let (sender_local, bank) =
                 self.get_two_mut_users(&bot_user, &(crate::environment::BOT_ID.into()));
             sender_local.coins -= amount;
-            bank.coins += amount * 5;
+            bank.coins += amount * 3;
 
             user_coins = sender_local.coins;
             bank_coins = bank.coins;
@@ -384,6 +384,9 @@ impl Games for Server {
                 if chance >= 80 {
                     let diff = bank.coins / 2;
                     sender_local.coins += diff;
+                    bank.coins -= diff;
+                    user_coins += diff;
+                    bank_coins -= diff;
                     InvestmentStatus::Dividends(diff)
                 } else {
                     InvestmentStatus::Success
@@ -392,13 +395,28 @@ impl Games for Server {
         } {
             InvestmentStatus::Success => {
                 format!(
-                    "You have invested {} coin{} in the CowardCoin Bank™.\nYou now have {} coin{}.\nThere are now {} coin{} in the CowardCoin Bank™.",
-                    amount,
-                    s_if(amount),
+                    "You have invested {} coin{} in the CowardCoin Bank™.\nYou now have {} coin{}.\nThere are now {} coin{} in the CowardCoin Bank™.\nThe market will shift in {}.",
+                    amount * 3,
+                    s_if(amount * 3),
                     user_coins,
                     s_if(user_coins),
                     bank_coins,
-                    s_if(bank_coins)
+                    s_if(bank_coins),
+                    crate::helpers::seconds_to_string(
+                        if SystemTime::now()
+                            .duration_since(self.time_of_last_interest)
+                            .unwrap()
+                            < crate::environment::MARKET_CHANGE_TIMER
+                        {
+                            (crate::environment::MARKET_CHANGE_TIMER
+                                - SystemTime::now()
+                                    .duration_since(self.time_of_last_interest)
+                                    .unwrap())
+                            .as_secs() as i64
+                        } else {
+                            0i64
+                        }
+                    )
                 )
             }
             InvestmentStatus::Dividends(dividends) => {
