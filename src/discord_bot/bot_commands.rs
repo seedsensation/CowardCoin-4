@@ -53,7 +53,17 @@ pub fn read_message(
                 }
             }
             "arena" => Command::Arena(user, words.iter().map(|x| x.to_string()).collect()),
-            "eat" => Command::EatCoin(user),
+            "eat" => {
+                let eaten_count = match words
+                    .iter()
+                    .filter_map(|word| word.parse::<i64>().ok())
+                    .sum()
+                {
+                    0 => 1,
+                    amount => amount,
+                };
+                Command::EatCoin(user, eaten_count)
+            }
             command => {
                 println!("Unrecognised command '{command}'");
                 Command::GetCoin(user)

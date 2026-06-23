@@ -14,7 +14,7 @@ pub enum Command {
     CoinCountMultiple(Vec<BotUser>),
     CoinLeaderboard(BotUser),
     GiveCoin(BotUser, BotUser, i64),
-    EatCoin(BotUser),
+    EatCoin(BotUser, i64),
     Invest(BotUser, i64),
     Arena(BotUser, Vec<String>),
     CreateCoin,

@@ -85,6 +85,8 @@ impl Games for Server {
 
         if user.coins == 0 {
             "You need to have at least 1 coin to do a trick.".to_string()
+        } else if user.eaten < 0 {
+            "You're too hungry to do a trick!".to_string()
         } else if user.level >= (required_level_for_trick(amount, user.coins) - 1) {
             if SystemTime::now()
                 .duration_since(user.time_of_last_trick)

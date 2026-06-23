@@ -226,21 +226,30 @@ impl CoinCommands for Server {
             }
             Command::NoCommand => unimplemented!(),
             Command::Error(error_msg) => Some(error_msg.to_string()),
-            Command::EatCoin(bot_user) => {
+            Command::EatCoin(bot_user, amount) => {
                 let eaten = {
                     let user = self.get_mut_user_from_id(&bot_user);
-                    user.eaten += 1;
+                    user.coins -= amount;
+                    user.eaten += amount;
                     user.eaten
                 };
-                let eat_count = if eaten > 1 {
-                    format_args!("\nYou have eaten {} coins.", eaten)
+                let eat_count = if eaten != 1 {
+                    format_args!("\nYou have eaten {} coins in total.", eaten)
                 } else {
                     format_args!("")
                 };
                 if let Err(why) = self.save() {
                     Some(format!("Error saving to file: {why:?}"))
                 } else {
-                    Some(format!("You have eaten a coin!{}", eat_count))
+                    Some(format!(
+                        "You ate {} coin{}!{}",
+                        match amount {
+                            1 => "a".to_string(),
+                            a => a.to_string(),
+                        },
+                        s_if(amount),
+                        eat_count
+                    ))
                 }
             }
         }

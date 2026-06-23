@@ -84,8 +84,12 @@ impl CoinUser {
             } else {
                 String::new()
             },
-            if self.eaten > 0 {
-                format!("\n> - You have eaten {} coins.", self.eaten)
+            if self.eaten != 0 {
+                format!(
+                    "\n> - You have eaten {} coin{}.",
+                    self.eaten,
+                    s_if(self.eaten)
+                )
             } else {
                 String::new()
             }
