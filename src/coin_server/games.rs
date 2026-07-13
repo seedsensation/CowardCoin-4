@@ -8,6 +8,7 @@ use crate::helpers::*;
 pub trait Games {
     fn arena(&mut self, bot_user: BotUser, command: Vec<String>) -> String;
     fn trick(&mut self, bot_user: BotUser, amount: i64) -> String;
+    fn trick_max(&mut self, bot_user: BotUser) -> String;
     fn invest(&mut self, bot_user: BotUser, amount: i64) -> String;
 }
 
@@ -75,6 +76,11 @@ impl Games for Server {
             }
         }
         self.arena_intro(bot_user)
+    }
+    fn trick_max(&mut self, bot_user: BotUser) -> String {
+        let user = self.get_user_from_id(&bot_user).max_coins_for_trick();
+
+        self.trick(bot_user, user)
     }
     fn trick(&mut self, bot_user: BotUser, amount: i64) -> String {
         // figure out whether a trick is legal
@@ -376,7 +382,7 @@ impl Games for Server {
             } else {
                 sender_local.time_of_last_investment = SystemTime::now();
                 sender_local.coins -= amount;
-                bank.coins += amount * 3;
+                bank.coins += amount * crate::environment::BANK_MULTIPLIER;
 
                 let chance = crate::helpers::random_between(0, 100);
                 if chance >= 80 {

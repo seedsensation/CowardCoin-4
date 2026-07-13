@@ -20,6 +20,25 @@ pub fn read_message(
                 false => Command::CoinCountMultiple(mentions.iter().map(|x| x.into()).collect()),
             },
             "leaderboard" => Command::CoinLeaderboard(user),
+            "trick" => {
+                if words.iter().filter(|x| **x == "max").count() > 0 {
+                    Command::TrickMax(user)
+                } else {
+                    let coin_total = words
+                        .iter()
+                        .filter_map(|word| word.parse::<i64>().ok())
+                        .sum();
+                    if coin_total == 0 {
+                        Command::Error(
+                            "Please make sure you're doing a trick with at least one coin.",
+                        )
+                    } else if coin_total < 0 {
+                        Command::Error("You can't do a trick with negative coins!")
+                    } else {
+                        Command::Trick(user, coin_total)
+                    }
+                }
+            }
             "give" => {
                 if mentions.is_empty() {
                     Command::Error("You haven't mentioned anyone to give coins to.")

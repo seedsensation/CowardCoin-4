@@ -19,6 +19,7 @@ pub trait CoinCommands {
 
 impl CoinCommands for Server {
     /// Run a command from the `Command` enum.
+    #[allow(unreachable_patterns)]
     async fn run_command(&mut self, command: Command) -> Option<String> {
         let should_save = command.should_save();
         let output = match command {
@@ -226,6 +227,9 @@ impl CoinCommands for Server {
             Command::EatCoin(bot_user, amount) => {
                 let eaten = {
                     let user = self.get_mut_user_from_id(&bot_user);
+                    if user.coins - amount < 0 {
+                        return Some("You don't have enough coins to eat...".to_string());
+                    }
                     user.coins -= amount;
                     user.eaten += amount;
                     user.eaten
@@ -246,6 +250,11 @@ impl CoinCommands for Server {
                     eat_count
                 ))
             }
+            Command::Trick(user, amount) => Some(self.trick(user, amount)),
+            Command::TrickMax(user) => Some(self.trick_max(user)),
+            _ => Some(format!(
+                "That command is recognised, but has not been implemented yet."
+            )),
         };
 
         if should_save && let Err(why) = self.save() {
@@ -280,8 +289,11 @@ impl CoinCommands for Server {
                 Ok(v) => {
                     let user = self.users.get_mut(v).unwrap();
                     let coins_change = (user.coins as f64
-                        * (crate::helpers::random_between(650, 1150) as f64 / 1000f64))
-                        as i64;
+                        * (crate::helpers::random_between(
+                            crate::environment::BANK_MIN_FLUCTUATE,
+                            crate::environment::BANK_MAX_FLUCTUATE,
+                        ) as f64
+                            / 1000f64)) as i64;
                     eprintln!("Updating investments by {}", coins_change - user.coins);
                     user.coins = coins_change;
                 }

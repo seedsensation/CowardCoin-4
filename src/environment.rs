@@ -8,6 +8,10 @@ pub const BOT_ID: u64 = 813814751192809543;
 pub const COIN_MIN_TIME: u64 = 900;
 pub const COIN_MAX_TIME: u64 = 1500;
 
+pub const BANK_MULTIPLIER: i64 = 5;
+pub const BANK_MIN_FLUCTUATE: i64 = 750;
+pub const BANK_MAX_FLUCTUATE: i64 = 1500;
+
 pub const COIN_TIMEOUT: u64 = 300;
 
 pub fn coin_channel() -> u64 {

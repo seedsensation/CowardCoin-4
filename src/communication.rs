@@ -8,6 +8,7 @@ use tokio::sync::mpsc::Sender;
 use crate::discord_bot::BotUser;
 
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum Command {
     // user commands
     GetCoin(BotUser),
@@ -18,6 +19,8 @@ pub enum Command {
     EatCoin(BotUser, i64),
     Invest(BotUser, i64),
     Arena(BotUser, Vec<String>),
+    Trick(BotUser, i64),
+    TrickMax(BotUser),
 
     // internal commands
     CreateCoin,
@@ -47,7 +50,10 @@ impl Command {
 		// when a coin is invested it updates coin numbers
 		| Invest(..)
 		// when you level up it updates numbers
-		| Arena(..) => true,
+		| Arena(..)
+		| Trick(..)
+		| TrickMax(..)
+		=> true,
             _ => false,
         }
     }
